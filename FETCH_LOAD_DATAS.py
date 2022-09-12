@@ -24,7 +24,7 @@ def fetch_food_data(food_path=FOOD_PATH, dwnld_url=DOWNLOAD_URL, zip_path=ZIP_PA
     		os.makedirs(food_path)
 	urllib.request.urlretrieve(dwnld_url, zip_path)
 
-		with zipfile.ZipFile(zip_path, mode="r") as archive:
+	with zipfile.ZipFile(zip_path, mode="r") as archive:
     		archive.extract(file_name, food_path)
 
 	os.remove(zip_path)
