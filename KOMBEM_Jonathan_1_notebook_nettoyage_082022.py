@@ -59,76 +59,76 @@ help(FETCH_LOAD_DATAS)
 
 # ## Découverte du jeu de données
 
-# In[4]:
+# In[ ]:
 
 
 df_food = FETCH_LOAD_DATAS.load_food_data()
 
 
-# In[5]:
+# In[ ]:
 
 
 df = df_food.copy()
 
 
-# In[6]:
+# In[ ]:
 
 
 df.shape
 
 
-# In[7]:
+# In[ ]:
 
 
 df.head()
 
 
-# In[8]:
+# In[ ]:
 
 
 df.isna().mean().mean()
 
 
-# In[9]:
+# In[ ]:
 
 
 #trier par valeur de taux de remplissage
-msno.bar(df)
+msno.bar(df, sort='ascending')
 
 
-# In[10]:
+# In[ ]:
 
 
 #cellule utilisée pour naviguer à traver les colonnes pour se faire une idée des valeurs qu'elles contiennent
 df['traces_tags'].value_counts()[20:]
 
 
-# In[11]:
+# In[ ]:
 
 
 #cellule utilisée pour naviguer dans le jeu de données pour observer les taux de remplissage par bloc
 msno.matrix(df.iloc[:1000,58:])
 
 
-# In[12]:
+# In[ ]:
 
 
 df.isna().mean(axis=1).hist(bins=100)
 
 
-# In[13]:
+# In[ ]:
 
 
 df.isna().mean(axis=1)[df.isna().mean(axis=1) > 0.75]
 
 
-# In[14]:
+# In[ ]:
 
 
 df.isna().mean().hist(bins=100)
 
 
-# In[15]:
+# In[ ]:
 
 
 df.isna().mean()[df.isna().mean() > 0.90]
@@ -161,15 +161,9 @@ df.isna().mean()[df.isna().mean() > 0.90]
 # 
 # Comme il y a significativement plus valeurs pour les colonnes du début du tableau, que pour les colonnes du milieu vers la fin du tableau (à l'exception du nutriscore), nous considérons que nous pourrons épurer celui-ci de gauche à droite, de partie en partie, à quelques exceptions près de variables peut-être.
 
-# In[16]:
-
-
-df_food.notna().mean().plot.bar()
-
-
 # #### 1. Partie générale relative à la base de données des produits
 
-# In[17]:
+# In[ ]:
 
 
 col1 = list(df.columns[:df.columns.get_loc('packaging')])
@@ -183,20 +177,20 @@ col1
 # - La colonne 'product_name' pour permettre à l'utilisateur de notre application de réaliser une recherche textuelle simple
 # 
 
-# In[18]:
+# In[ ]:
 
 
 col_part1_to_drop = [x for x in col1 if x not in ['code','url','last_modified_datetime','product_name' ]]
 df.drop(columns=col_part1_to_drop, inplace=True)
 
 
-# In[19]:
+# In[ ]:
 
 
 df.dropna(subset=['code'],inplace=True, axis=0)
 
 
-# In[20]:
+# In[ ]:
 
 
 df[df['code'].duplicated(keep=False)].sort_values('code', ascending=True).head()
@@ -204,7 +198,7 @@ df[df['code'].duplicated(keep=False)].sort_values('code', ascending=True).head()
 
 # Pour les doublons, à ce stade, nous n'allons garder que l'occurence présentant le plus faible taux de valeurs manquantes.
 
-# In[21]:
+# In[ ]:
 
 
 df['taux_Nan'] = df.isna().mean(axis=1)
@@ -213,28 +207,34 @@ df.drop_duplicates(subset=['code'], keep='first', inplace=True)
 df.drop('taux_Nan', axis=1, inplace=True)
 
 
-# In[22]:
+# In[ ]:
 
 
 df.shape
 
 
-# In[23]:
+# In[ ]:
 
 
 df['code'].isna().mean()
 
 
-# In[24]:
+# In[ ]:
 
 
 df['code'].nunique()/df['code'].shape[0]
 
 
-# In[25]:
+# In[ ]:
 
 
 df_1 = df.copy()
+
+
+# In[ ]:
+
+
+df['url'].str.startswith('http').sum()
 
 
 # La colonne 'code' peut désormais être considérée comme notre colonne identifiante pour nos données.
@@ -246,19 +246,19 @@ df_1 = df.copy()
 
 # #### 2. Partie informative contenant des métadonnées du produit
 
-# In[307]:
+# In[ ]:
 
 
 col2 = list(df.columns[df.columns.get_loc('packaging'):(df.columns.get_loc('countries_fr')+1)])
 
 
-# In[27]:
+# In[ ]:
 
 
 df[col2].isna().mean()
 
 
-# In[28]:
+# In[ ]:
 
 
 # cellule utilisée pour explorer les différents nombres de valeurs uniques
@@ -275,19 +275,19 @@ df['categories_fr'].value_counts()
 # 
 # 
 
-# In[29]:
+# In[ ]:
 
 
 df = df_1.copy()
 
 
-# In[30]:
+# In[ ]:
 
 
 df = df[df['countries_fr'].str.contains('France', regex=False).fillna(False)]
 
 
-# In[31]:
+# In[ ]:
 
 
 L_split = [col.split('_') for col in col2]
@@ -301,25 +301,252 @@ col_part2_to_drop.append('categories')
 df.drop(columns=col_part2_to_drop, inplace=True)
 
 
-# In[32]:
+# Nous allons maintenant travailler sur la colonne 'categories_fr'.
+# - Nous allons tâcher de synthétiser les catégories tout en ne perdant pas trop de granularité car nous nous appuierons sur les catégories de produits pour faire des recommandations dans notre application
+# - Nous mettrons en évidence la présence de 'viande' et de 'porc' pour les spécificités des certains régimes, la présence de 'poisson', 'fruits de mer', 'oeuf' et 'gluten' sera traitée dans la prochaine partie avec les allergènes.
+
+# In[ ]:
 
 
-df.shape
+plt.figure(figsize=(15,8))
+df['categories_fr'].value_counts()[:50].plot.bar()
 
 
-# In[33]:
+# In[ ]:
 
 
-df.head()
+# pour faciliter le travail sur les chaînes de caractères, on les passe toutes en minuscule
+df['categories_fr'] = df['categories_fr'].str.lower()
 
 
-# In[34]:
+# In[ ]:
 
 
-df['url'].str.startswith('http').sum()
+df['categories_fr'].notna().sum()
 
 
-# In[35]:
+# In[ ]:
+
+
+df['categories_fr'].nunique()
+
+
+# In[ ]:
+
+
+# on crée un dictionnaire nous renseignant sur le nombre d'occurences de chaque 'sous-catégorie' 
+# parmi les différentes catégories
+def dict_subcateg(col_name):
+    dict_tmp = {}
+    L_split_subcateg = df[col_name].value_counts().index.str.split(',').tolist()
+    for liste in L_split_subcateg:
+        for element in liste:
+            if element not in dict_tmp.keys():
+                dict_tmp[element]=1
+            else:
+                dict_tmp[element]+=1
+
+    dict_subcateg = {}
+    sorted_keys = sorted(dict_tmp, key=dict_tmp.get, reverse=True)
+
+    for w in sorted_keys:
+        dict_subcateg[w] = dict_tmp[w]
+
+    return dict_subcateg
+
+dict_subcateg('categories_fr')
+
+
+# Les sous-catégories suivantes sont trop générales :
+# - 'aliments et boissons à base de végétaux'
+# - "aliments d'origine végétale"
+# - 'aliments à base de fruits et de légumes'
+# - 'boissons'
+# 
+# Nous décidons de catégoriser les produits sans elles, en créant une nouvelle colonne en retirant leur présence, et en ne sélectionnant qu'un nombre réduit de catégories pour décrire chaque produit :
+
+# In[ ]:
+
+
+list_cat_to_del = ['aliments et boissons à base de végétaux', "aliments d'origine végétale",
+                   'aliments à base de fruits et de légumes', 'boissons']
+
+
+# In[ ]:
+
+
+# fonction renvoyant la chaîne de caractère 'value' raccourcie dont on a gardé les 'n_synth' premiers éléments 
+# séparés par des virgules, en retirant les catégories passées en argument
+def synthetize_value(value, n_synth, list_cat_to_del=list_cat_to_del):
+    split_value = str(value).split(',')
+    for cat in list_cat_to_del:
+        split_value = [value for value in split_value if value != cat]
+    synth_value = ''
+    n = len(split_value)
+    if n!=0:
+        for i in range(np.min([n,n_synth])-1):
+            synth_value += (str(split_value[i])+', ')
+        synth_value += str(split_value[(np.min([n,n_synth])-1)])
+    return synth_value
+
+
+# Pour avoir une idée de l'effet de notre catégorisation synthétique, on peut regarder combien de nouvelles modalités différentes il nous faut garder pour décrirer tous nos produits :
+
+# In[ ]:
+
+
+# on trace pour chaque nombre de sous-catégories que l'on garde pour décrire un produit, l'évolution 
+def display_categ_repart(n_synth, n_newmodality):
+    L_plot = []
+    plt.figure(figsize=(12,6))
+    for i in range(n_synth+1):
+        L_tmp = []
+        Serie_synth_categ = df[df['categories_fr'].notna()].apply(lambda x: synthetize_value(x['categories_fr'],i), axis=1)
+        for j in range(1,(n_newmodality+1)):
+            L_tmp.append(Serie_synth_categ.value_counts()[:j].sum()/len(Serie_synth_categ))
+        plt.plot(list(range(1,(n_newmodality+1))), L_tmp, label=f'n_synth={i}')
+   
+    plt.legend(bbox_to_anchor=(1,1))
+    plt.grid(visible=True)
+    plt.show()
+
+
+# In[ ]:
+
+
+display_categ_repart(3,100)
+
+
+# On constate sans surprise, qu'en ne gardant qu'une sous-catégorie pour décrire un produit, avec seulement 20 nouvelles modalités, nous décrvions plus de 90% des produits, mais on obtient alors des catégories trop larges pour que la recommandation d'un produit appartenant à la même catégorie puisse toujours être pertinente. Il suffit de comparer les modalités les plus présentes dans le jeu de données pour 'n_synth' = 1, 2 puis 3 pour s'en apercevoir :
+
+# In[ ]:
+
+
+# fonction créant la colonne catégorielle synthétique associée à la valeur de n_synth et contenant les n_synth premières
+# sous-catégories de la colonne 'categories_fr' du produit
+def set_col_categ_synth(n_synth):
+    if 'categories_synth' in df.columns:
+        df.drop('categories_synth', axis=1, inplace=True)
+    Serie_categ_synth = df.apply(lambda x: synthetize_value(x['categories_fr'],n_synth), axis=1)
+    df.insert(loc=(df.columns.get_loc('categories_fr')+1), column='categories_synth', value=Serie_categ_synth)
+
+
+# In[ ]:
+
+
+set_col_categ_synth(1)
+df['categories_synth'].value_counts()[:10]
+
+
+# In[ ]:
+
+
+set_col_categ_synth(2)
+df['categories_synth'].value_counts()[:10]
+
+
+# In[ ]:
+
+
+set_col_categ_synth(3)
+df['categories_synth'].value_counts()[:20]
+
+
+# Pour la suite de l'étude nous allons garder les colonnes obtenues pour n_synth = 2 et 3, ainsi, si nous ne trouvons pas de produits à recommander dans la catégorie d'un produit associée à n_synth = 3, nous pourrons proposer un élargissement de recommandation à la catégorie de ce produit associée à n_synth = 2 à défaut.
+
+# Pour la suite de l'étude nous allons créer 3 colonnes catégorielles chacune comportant la valeur de la sous-catégorie de niveau 0, 1 et 2 (ie. n_synth = 1, 2 et 3). Il sera alors facile de proposer des produits similaires à leur recherche nos utilisateurs finaux, et à défaut, de proposer un élargissement de recherche en proposant des produits de la même catégorie parent, ainsi de suite.. 
+# 
+# Par ailleurs, il sera possible d'encoder chacune des colonnes pour faciliter le traitement les traitements numériques de notre jeu de données ultérieurement !
+# 
+# Pour cela, nous allons modifier nos fonctions 'synthetize_value' et 'set_col_categ_synth' :
+
+# In[ ]:
+
+
+# fonction retournant une liste des n_synth_max premières catégories d'un produit, en mettant la valeur 'x' si le produit
+# n'est pas décrit par n_synth_max catégories
+def list_synth_value(value, n_synth_max, list_cat_to_del=list_cat_to_del):
+    split_value = str(value).split(',')
+    for cat in list_cat_to_del:
+        split_value = [value for value in split_value if value != cat]
+    list_synth = []
+    n=len(split_value)
+    for i in range(n_synth_max):
+        if i < n:
+            list_synth.append(split_value[i])
+        else:
+            list_synth.append('x')
+    return list_synth
+
+
+# In[ ]:
+
+
+list_synth_value(df.loc[df[df["categories_fr"].notna()].head(1).index[0]]['categories_fr'],3)
+
+
+# In[ ]:
+
+
+list_synth_value(df.loc[df[df["categories_fr"].isna()].head(1).index[0]]['categories_fr'],3)
+
+
+# In[ ]:
+
+
+# fonction créant les colonnes catégorielles hiérarchiques des produits, de la catégorie la plus générale (n_synth=1) à la 
+# catégorie la plus particulière (n_synth=n_synth_max)
+def set_cols_categ_synth(n_synth_max):
+    for i in range (n_synth_max):
+        col_name = 'categories_synth{}'.format((i+1))
+        if col_name in df.columns:
+            df.drop(col_name, axis=1, inplace=True)
+        Serie_categ_synth = df.apply(lambda x: list_synth_value(x['categories_fr'],n_synth_max)[i], axis=1)
+        df.insert(loc=(df.columns.get_loc('categories_fr')+(i+1)), column=col_name, value=Serie_categ_synth)
+
+
+# In[ ]:
+
+
+set_cols_categ_synth(3)
+
+
+# In[ ]:
+
+
+df[df['categories_fr'].notna()].iloc[:, df.columns.get_loc('categories_fr'):df.columns.get_loc('categories_fr')+4]
+
+
+# Créons maintenant les colonnes nous permettant de savoir si un produit contient de la viande (pour les végétariens, végétaliens, et flexitariens) et du porc (pour ceux qui n'en consomment pas quelque soit la raison).
+
+# In[ ]:
+
+
+df.insert(loc=(df.columns.get_loc('categories_synth3')+1), column='viande', value=df['categories_fr'].apply(lambda x: 1 if str(x).__contains__('viande') else 0))
+df.insert(loc=(df.columns.get_loc('categories_synth3')+2), column='porc', value=df['categories_fr'].apply(lambda x: 1 if str(x).__contains__('porc') else 0))
+
+
+# In[ ]:
+
+
+df[df['porc']==1]['viande'].value_counts()
+
+
+# In[ ]:
+
+
+df.loc[df['porc']==1, 'viande']=1
+
+
+# Nous n'avons dès lors plus besoin de la colonne 'categories_fr'.
+
+# In[ ]:
+
+
+df.drop('categories_fr', axis=1, inplace=True)
+
+
+# In[ ]:
 
 
 df_2 = df.copy()
@@ -332,32 +559,32 @@ df_2 = df.copy()
 # 
 # 
 
-# In[271]:
+# In[ ]:
 
 
 df = df_2.copy()
 
 
-# In[272]:
+# In[ ]:
 
 
 col3 = list(df.columns[df.columns.get_loc('ingredients_text'):df.columns.get_loc('serving_size')])
 col3
 
 
-# In[173]:
+# In[ ]:
 
 
 df[col3]
 
 
-# In[174]:
+# In[ ]:
 
 
 df[col3].isna().mean()
 
 
-# In[175]:
+# In[ ]:
 
 
 df[col3].nunique()
@@ -369,75 +596,55 @@ df[col3].nunique()
 # 
 # - Nous combinerons donc ces 2 colonnes en espérant ainsi obtenir une information plus complète.
 
-# In[273]:
+# In[ ]:
 
 
 df.drop(['allergens_fr','traces_tags','traces'], axis=1, inplace=True)
 
 
-# In[274]:
+# In[ ]:
 
 
 col3 = list(df.columns[df.columns.get_loc('ingredients_text'):df.columns.get_loc('serving_size')])
 df[col3].isna().mean()
 
 
-# In[178]:
+# In[ ]:
 
 
-df['categories_fr'].value_counts()[:20]
-
-
-# In[179]:
-
-
-cat ="Snacks sucrés,Chocolats,Chocolats au lait"
-df[df['categories_fr'] == cat]['traces_fr'].value_counts()[:20].plot.pie()
-
-
-# In[180]:
-
-
-df[df['categories_fr'] == cat].loc[df['traces_fr'].isna(),].head()
-
-
-# Pour chaque catégorie de produit, pour les colonnes 'traces' et 'allergens', à partir des modalités les plus fréquentes que ces 2 variables prennent, nous allons estimer la modalité pour les produits présentant une valeur manquante, avant de fusionner ces 2 données dans une nouvelle colonne.
-
-# In[275]:
-
-
+# pour faciliter le travail sur les chaînes de caractères, on les passe toutes en minuscule
 df['traces_fr'] = df['traces_fr'].str.lower()
 df['allergens'] = df['allergens'].str.lower()
 
 
-# In[182]:
+# In[ ]:
 
 
 def get_list_split_str(col_name):
     return df[col_name].value_counts().index.str.split(',').tolist()
 
 
-# In[158]:
+# In[ ]:
 
 
 L_traces = get_list_split_str('traces_fr')
 len(L_traces)
 
 
-# In[159]:
+# In[ ]:
 
 
 L_traces
 
 
-# In[141]:
+# In[ ]:
 
 
 L_allergens = get_list_split_str('allergens')
 len(L_allergens)
 
 
-# In[165]:
+# In[ ]:
 
 
 L_valeurs_allerg = df['traces_fr'].value_counts().index.tolist()+df['allergens'].value_counts().index.tolist()
@@ -445,7 +652,7 @@ ens_valeurs_allerg = set(L_valeurs_allerg)
 len(ens_valeurs_allerg)
 
 
-# In[426]:
+# In[ ]:
 
 
 def get_list_uniques_splits_str(col_name):
@@ -459,20 +666,20 @@ def get_list_uniques_splits_str(col_name):
     return list_tmp
 
 
-# In[86]:
+# In[ ]:
 
 
 L_traces_uniques = get_list_uniques_splits_str('traces_fr')
 len(L_traces_uniques)
 
 
-# In[87]:
+# In[ ]:
 
 
 L_traces_uniques
 
 
-# In[57]:
+# In[ ]:
 
 
 L_traces_reduit = ['blé', 'wheat','gluten', 'orge','cereales', 'epautre', 'cereals', 'glurent', 
@@ -508,14 +715,20 @@ L_traces_reduit = ['blé', 'wheat','gluten', 'orge','cereales', 'epautre', 'cere
 len(L_traces_reduit)
 
 
-# In[88]:
+# In[ ]:
 
 
 L_allerg_uniques = get_list_uniques_splits_str('allergens')
 len(L_allerg_uniques)
 
 
-# In[115]:
+# In[ ]:
+
+
+L_allerg_uniques
+
+
+# In[ ]:
 
 
 L_allerg_reduit = ['comté', 'milch', 'vollmilchpulver', 'butterreinfett', 'magermilchpulver', 'fromage', 'emmental', 'lctosa',
@@ -573,7 +786,7 @@ L_allerg_reduit = ['comté', 'milch', 'vollmilchpulver', 'butterreinfett', 'mage
 len(L_allerg_reduit)
 
 
-# In[116]:
+# In[ ]:
 
 
 ens_allerg_uniques = set(L_traces_uniques)
@@ -582,7 +795,7 @@ for element in L_allerg_uniques:
 len(ens_allerg_uniques)
 
 
-# In[117]:
+# In[ ]:
 
 
 ens_allerg_reduit = set(L_traces_reduit)
@@ -594,13 +807,17 @@ len(ens_allerg_reduit)
 # Nous allons réaliser un tableau disjonctif complet où chaque produit appartiendra à autant de catégories d'allergènes qu'il en contient. Nous ne pouvons donc pas utiliser la fonction OneHotEncoder de scikit-learn (qui ne peut attribuer qu'une modalité à chaque individu).
 # Nous allons créer un ensemble de susbstances allergènes par catégorie (14 en tout), et créer une colonne pour chacune des catégories, et nous vérifierons pour chaque produit la présence de substances de la catégorie dans son champ 'allergens' et 'traces_fr'.
 # 
-# Le travail préliminaire réalisé ci-avant a permis de passer de 11788 valeurs différentes, à 1879 modalités uniques puis à 310 modalités discriminant 14 catégories de substances allergènes (division par 38).
+# Le travail préliminaire réalisé ci-avant a permis de passer de 11788 valeurs différentes, à 1879 modalités uniques puis à 309 modalités discriminant 14 catégories de substances allergènes (division par 38).
 # 
 # NB : le tri des "mots-clés" des listes de modalités uniques pour obtenir les listes réduites a été réalisé à la main, et bien que l'opération ait été réalisée minutieusement, il y aura des manques que nous considérons comme étant des erreurs de perte d'information inhérentes au processus de transformation que nous avons choisi.
-# - Une autre manière de procéder aurait été de lister l'ensemble des substances les plus courantes appartenant aux 14 catégories d'allergènes qu'il est obligatoire de mentionner sur l'emballage d'un produit, et de les traduire dans toutes les langues de l'union européenne, mais cela aurait donné un tableau trop volumineux et nous n'aurions pas pu capter les mots-clés relevant de fautes d'orthographes, les variatons de mots avec ou sans accent, ainsi que les mots au pluriel comme nous avons pu le faire ici.
+# - Une autre manière de procéder aurait été de lister l'ensemble des substances les plus courantes appartenant aux 14 catégories d'allergènes qu'il est obligatoire de mentionner sur l'emballage d'un produit, et de les traduire dans toutes les langues de l'union européenne, mais cela aurait donné un tableau trop volumineux et nous n'aurions pas pu capter les mots-clés relevant de fautes d'orthographes, les variations de mots avec ou sans accent, ainsi que les mots au pluriel comme nous avons pu le faire ici.
 
-# In[269]:
+# In[ ]:
 
+
+set_gluten = set(['gluten', 'glurent', 'glutn', 'glúten'
+    
+])
 
 set_oeuf = set(['hühnerei-trockeneiweiß','uovo', 'hühnervolleipulver', 'hühnerei', 'eigelb', 'huevo', 'oeuf', 'œufs', 'egg',
                 'eggs'])
@@ -652,9 +869,9 @@ set_cereales = set(['blé', 'wheat','gluten', 'orge','cereales', 'epautre', 'cer
                     'weizen', 'gerstenmalz', 'weizenflocken', 'couscous', 'gerstenmalzmehl', 'weizenmalzmehl', 'blés',
                     'boulghour', 'gerstenvollkornmehl', 'gerstenvollkornmehl', 'hafervollkornmehl', 'dinkelvollkornmehl',
                     'roggenvollkornmehl', 'hafervollkornflocken', 'weizenvollkornflocken', 'weizenkleber', 'hartweizengrieß',
-                    'millet', 'siegle', 'peanuts', 'malté', 'weizengluten', 'amidon', 'glúten'])
+                    'millet', 'siegle', 'malté', 'weizengluten', 'amidon', 'glúten'])
 
-set_arachides = set(['arachide', 'arachides', 'cacahuètes', 'cacahetes','cacahouètes', 'erdnüsse', 'cacahuète'])
+set_arachides = set(['arachide', 'arachides', 'cacahuètes', 'cacahetes','cacahouètes', 'erdnüsse', 'cacahuète', 'peanuts'])
 
 set_celeri = set(['céléri','celeria', 'czeleri', 'selleri', 'celerie', 'céleris', 'țelină'])
 
@@ -662,51 +879,51 @@ set_sesame = set(['sesame', 'sésame', 'susam','cesame', 'sesamo', 'sesamöl'])
 
 set_moutarde = set(['moutarde', 'mustard', 'mouarde', 'moutrde','senf', 'moutard'])
 
-dict_allerg = {'oeuf':set_oeuf, 'fruits_coque':set_fruits_coque, 'lupin':set_lupin, 'lait':set_lait, 'sulfites':set_sulfites,
-               'poissons':set_poissons, 'mollusques':set_mollusques, 'crustaces':set_crustaces, 'soja':set_soja,
-               'cereales':set_cereales, 'arachides':set_arachides, 'celeri':set_celeri, 'sesame':set_sesame, 
+dict_allerg = {'gluten': set_gluten, 'oeuf':set_oeuf, 'fruits_coque':set_fruits_coque, 'lupin':set_lupin, 'lait':set_lait, 
+               'sulfites':set_sulfites, 'poissons':set_poissons, 'mollusques':set_mollusques, 'crustaces':set_crustaces, 
+               'soja':set_soja, 'cereales':set_cereales, 'arachides':set_arachides, 'celeri':set_celeri, 'sesame':set_sesame, 
                'moutarde':set_moutarde}
 
 
-# In[270]:
+# In[ ]:
 
 
 for key in dict_allerg.keys():
     print(key)
 
 
-# In[266]:
+# In[ ]:
 
 
 len(dict_allerg.keys())
 
 
-# In[189]:
+# In[ ]:
 
 
 for substance in dict_allerg['oeuf']:
     print(substance)
 
 
-# In[276]:
+# In[ ]:
 
 
 df.insert(loc=(df.columns.get_loc('traces_fr')+1), column='substances_allergenes', value=(df['traces_fr'] + ',' + df['allergens']))
 
 
-# In[277]:
+# In[ ]:
 
 
 df['substances_allergenes'].fillna('inconnues', inplace=True)
 
 
-# In[278]:
+# In[ ]:
 
 
 df['substances_allergenes']
 
 
-# In[258]:
+# In[ ]:
 
 
 df['substances_allergenes'][253925].__contains__('lactose')
@@ -714,7 +931,7 @@ df['substances_allergenes'][253925].__contains__('lactose')
 
 # Nous constatons ici que nous aurions pu travailler sur la colonne issue de la jointure des colonnes 'traces_fr' et 'allergenes' car elle présente un nombre de valeurs uniques plus petit que la jointure des listes de valeurs uniques de ces mêmes colonnes (8367 contre 11788).
 
-# In[229]:
+# In[ ]:
 
 
 # nous définissons la fonction qui nous indiquera si un produit contient une substance de la catégorie passée en argument
@@ -730,40 +947,42 @@ def contains_allerg(cat_allerg, value):
     return n
 
 
-# In[244]:
+# In[ ]:
 
 
 def set_cols_cat_allerg():
+    k=1
     func = lambda value: contains_allerg(key, value)
     for key in dict_allerg.keys():
-        df[key] = df['substances_allergenes'].apply(func)
+        df.insert(loc=(df.columns.get_loc('traces_fr')+k), column=key, value=df['substances_allergenes'].apply(func)) 
+        k+=1
 
 
-# In[279]:
+# In[ ]:
 
 
 set_cols_cat_allerg()
 
 
-# In[308]:
+# In[ ]:
 
 
 df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde']
 
 
-# In[280]:
+# In[ ]:
 
 
 df['soja'].sum()
 
 
-# In[281]:
+# In[ ]:
 
 
 df.shape
 
 
-# In[287]:
+# In[ ]:
 
 
 (df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde'].sum(axis=1) == 0).value_counts()
@@ -772,7 +991,7 @@ df.shape
 # Nous avons perdu l'information de présence d'allergènes pour uniquement 7 produits sur la totalité (0.06%).
 # Nous traitons ces produits réticents à la main.
 
-# In[293]:
+# In[ ]:
 
 
 df[df['substances_allergenes'] != 'inconnues'][df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde'].sum(axis=1) == 0]['substances_allergenes']
@@ -780,7 +999,7 @@ df[df['substances_allergenes'] != 'inconnues'][df[df['substances_allergenes'] !=
 
 # Nous ajoutons la valeur 'céleri' à notre ensemble 'set_celeri'.
 
-# In[295]:
+# In[ ]:
 
 
 set_celeri.clear()
@@ -791,13 +1010,13 @@ dict_allerg = {'oeuf':set_oeuf, 'fruits_coque':set_fruits_coque, 'lupin':set_lup
                'moutarde':set_moutarde}
 
 
-# In[296]:
+# In[ ]:
 
 
 df['celeri'] = df['substances_allergenes'].apply(lambda value: contains_allerg('celeri', value))
 
 
-# In[297]:
+# In[ ]:
 
 
 (df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde'].sum(axis=1) == 0).value_counts()
@@ -805,13 +1024,13 @@ df['celeri'] = df['substances_allergenes'].apply(lambda value: contains_allerg('
 
 # On retrouve notre ligne mentionnant du 'réglisse' qui n'est pas une substance allergène à mentionner obligatoirement par le fabricant. Nous n'avons désormais plus besoin des colonnes 'traces_fr' et 'allergens'.
 
-# In[298]:
+# In[ ]:
 
 
 df.drop(['traces_fr','allergens'], axis=1, inplace=True)
 
 
-# In[299]:
+# In[ ]:
 
 
 df.shape
@@ -821,237 +1040,4 @@ df.shape
 
 
 df_3 = df.copy()
-
-
-# In[365]:
-
-
-plt.figure(figsize=(15,8))
-df['categories_fr'].value_counts()[:50].plot.bar()
-
-
-# In[316]:
-
-
-df['categories_fr'] = df['categories_fr'].str.lower()
-
-
-# In[429]:
-
-
-df['categories_fr'].notna().sum()
-
-
-# In[425]:
-
-
-df['categories_fr'].nunique()
-
-
-# In[428]:
-
-
-len(get_list_uniques_splits_str('categories_fr'))
-
-
-# In[419]:
-
-
-def is_list_a_base_for(liste, value):
-    result = False
-    for element in liste:
-        elmt_tmp = element.split
-        if value.__contains__(element):
-            result = True
-            break
-    return result
-
-
-# In[422]:
-
-
-is_list_a_base_for(['snacks sucrés', 'biscuits et gâteaux', 'biscuits'], 'biscuits au chocolat')
-
-
-# In[431]:
-
-
-def get_list_keywords(col_name):
-    list_tmp = []
-    list_splits = df[col_name].value_counts().index.str.split(',').tolist()
-    for list_values in list_splits:
-        for value in list_values:
-            if (value not in list_tmp) and  not is_list_a_base_for(list_tmp, value):
-                list_tmp.append(value)
-    return list_tmp
-
-
-# In[432]:
-
-
-L_categ_kw = get_list_keywords('categories_fr')
-len(L_categ_kw)
-
-
-# In[434]:
-
-
-show_list_elements_with = lambda value : [element for element in L_categ_kw if element.__contains__(value)]
-
-
-# In[433]:
-
-
-L_categ_kw
-
-
-# In[468]:
-
-
-show_list_elements_with('vegetable')
-
-
-# In[470]:
-
-
-#stop à abricots secs
-len(L_categ_kw[L_categ_kw.index('abricots secs'):])
-
-
-# In[ ]:
-
-
-set_cat_sucres = set([
-    'snacks sucrés','gâteau', 'gateau', 'chocolat', 'bonbon', 'dessert', 'sucrés', 'pâtes à tartiner', 'chocolaté', 'glace',
-    'sorbet', 'confiture', 'chewing-gum', 'miels', 'sablé', "pains d'épices", 'glacées','cônes', 'viennoiserie', 'brioche',
-    'crêpe', 'smoothies', 'sucre', 'roules-a-la-framboise', 'sirop', 'quatre-quarts', 'financier', 'palmiers', 'popcorn',
-    'spéculoos'
-])
-
-set_cat_epicerie = set([
-    'epicerie', 'sauce', 'pâtes sèches', 'pain', 'ketchup', 'mayonnaise', 'moutarde', 'olive', 'tournesol', 'colza', 'sel',
-    'poivre', 'epice', 'épice', 'conserve', 'soupe', 'oeuf', 'oeuf', 'egg', 'pizza', 'condiment', 'saucisson', 'chorizo',
-    'sardines en', 'sardines à', 'semoule', 'velouté', 'déshydratés', 'lyophilisés', 'sec', 'biscotte', 'prianiki', 'riz',
-    'pâtes à tarte', 'pâtes feuilletées', 'préparés', 'hamburgers', 'purées en flocons', 'foies gras', 'jus de tomates',
-    'vinaigre', 'légumineuses', 'muesli', 'egg', 'condiment', 'compotes', 'graines', 'pois', 'sandwich', 'maïs', 'margarine',
-    'galette', 'gaufre', 'cacahuète' ,'sauce-tomate-cuisine', 'tomate-ronde', 'tomate-en-boite', 'sauce-tomate-bolognaise', 'nl:tomatenpurrees',
-    'tomates et dérivés', 'purées de tomates', 'tomates en conserve', 'tomates pelées', 'jus de tomates', 'cassoulet',
-    'double-concentre-de-tomate', 'miettes-de-thon-a-la-tomate', 'miettes-de-thon-blanc-a-la-tomate', 'croûtons', 'dattes',
-    'coquillettes', 'spaghetti', 'blinis', 'épice', 'gressin', 'nouilles', 'pickle', 'champignon', 'pommes de terre',
-    'terrines','bouillons', 'amande', 'cajou', 'noix', 'noisette', 'nut', 'choucroutes'
-     
-])
-
-
-set_cat_fruits_legumes = set([
-    'légume', 'pois', 'sauce-tomate-cuisine', 'tomate-ronde', 'tomate-en-boite', 'sauce-tomate-bolognaise', 'nl:tomatenpurrees',
-    'tomates et dérivés', 'purées de tomates', 'tomates en conserve', 'tomates pelées', 'jus de tomates', 'tomates', 'salade',
-    'lentille', 'citron', 'haricot', 'flageolet', 'framboises', 'ratatouilles', 'épinard', 'abricot'
-    
-])
-
-set_cat_vegan = set([
-    'vegetable', 'tofu'
-])
-
-set_cat_cereales = set([
-    'céréale', 'flocons', 'muesli', 'blé', 'maïs', 'quinoa'
-])
-
-set_cat_sales = set([
-    'apéritif', 'aperitif', 'prianiki', 'chips', 'salés'
-])
-
-set_cat_boissons = set([
-    'boisson', 
-])
-
-set_cat_boissons_sucres = set([
-    'soda', 'nectar', 'nectar', 'jus', 'sans-alcool'
-])
-
-set_cat_boissons_chaudes = set([
-    'café', 'infusion'
-])
-
-set_cat_boiss_alc = set([
-    'vin', 'biere', 'bière', 'champagne', 'liqueur', 
-])
-
-set_car_charcuterie = set([
-    'rosette', 'saucisson', 'jambon', 'knacks'
-])
-
-set_cat_eaux = set([
-    'eau'
-    
-])
-
-set_cat_poisson = set([
-    'sardine', 'poisson', 'fish','sardines','thon', 'crevettes','fisch', 'pesce','cabillaud', 'saumon', 'maquereau', 
-    'colin', 'brochet', 'écrevisses', 'limande','poissons', 'truite', 'lieu', 'anchois', 'homard',
-    'maquereaux', 'langoustines', 'morue', 'esturgeon', 'mer', 'merlu', 'gambas', 'merlan', 'bar', 'rouget',
-    'barbet', 'langoustine', 'harengs', 'hareng', 'mollusques', 'molluschi', 'jacques','pulpe', 'poulpe', 'encornet',
-    'calamars', 'calmars', 'seiche', 'encornets', 'seiches', 'crustacés,', 'crustaces', 'surimi', 'crabe', 'crustacei',
-    'curstaces', 'crustacee', 'crustacees', 'drustace','huitre', 'clams', 'coquillages', 'huître', 'tourteau', 'crustace',
-    'moule', 'bulots'
-])
-
-set_cat_viandes = set([
-    'poulet', 'steak', 'boeuf', 'mouton', 'dinde', 'volaille', 'canard', 'dinde', 'lapin', 'lièvre', 'lardon', 'saucisse',
-    'porc'
-    
-])
-
-set_cat_surgeles = set([
-    'frite', 'surgele', 'lasagnes aux légumes'
-])
-
-set_cat_plats_prepares = set([
-    'lasagnes aux légumes', 'plat', 'pizza', 'burger', 'quiches', 'substitut', 'tofu', 'pâtes farcies', 'ravioli', 
-    'roules-au-fromage', 'ratatouilles'
-])
-
-set_cat_laitiers = set([
-    'laitier', 'fromage', 'lait', 'beurre', 'yaourts', 'crème', 'comté', 'lait','lactiques','lactosérum', 'milk', 'lactose', 
-    'creme', 'beurre', 'laitier', 'laiit','lactoserum', 'comté', 'milch', 'vollmilchpulver', 'butterreinfett', 
-    'magermilchpulver', 'fromage', 'emmental', 'lctosa', 'ferment', 'lacto', 'caséinates', 'maroilles'
-    'laitière', 'roquefort', 'creme', 'pecorino', 'parmigiano', 'milchzucker', 'milcheiweißhydrolysat', 'gouda',
-    'edam', 'actosérum', 'mozzarella', 'raclette', 'ricotta', 'tome', 'cheddar', 'milchschokolade', 'crème',
-    'molkenpulver', 'parmesan', 'maroilles', 'sahnepulver', 'butter', 'magermilchjoghurtpulver', 
-    'vollmilchpulver', 'leite', 'iactose', 'beaufort','yaourt', 'magermilch', 'yaourts' ,'sahnepulver', 'édam',
-    'présure', 'mascarpone', 'latte', 'feta', 'mimolette', 'laktose', 'iait', 'fromage', 'milchserum',
-    'reblochon', 'eiweißpulver', 'magermilchjoghurtpulver', 'milcheiweiß', 'magermilchkonzentrat',
-    'milchserumkonzentrat', 'whey', 'cantal', 'leche', 'lactosa', 'mantequilla', 'kuhmilch', 'weichkäse',
-    'süßmlkenpulver', 'molke', 'magermllchpulver', 'gorgonzola', 'crème', 'laitiers', 'iactosèrum', 
-    'emmenthal', 'cream', 'lactate', 'beure', 'magemilchpulver', 'bleu', 'kondensmagermilch', 'caséinate', 
-    'gouda', 'écrémé', 'schlagsahne', 'milcheiweißpulver', 'vollfett-frischkäse', 'schlagsahne', 'reblochon',
-    'ziegenmilch', 'tomme', 'laitiére', 'laitiéres', 'ialt', 'lactique', 'iactoserum', 'pecorino', 'ferments',          
-])
-
-
-# In[343]:
-
-
-list_mots_liaison = ["a", "à", "base", "avec", "pour", "et", "d'", "sans", "en", "partir", "le", "la", "les", "l'", "des", 
-                     "du", "au"]
-
-
-# In[412]:
-
-
-def get_list_unique_keywords(liste):
-    list_kw = []
-    for elmt1 in liste:
-        elmt_tmp = elmt1.split()
-        for elmt2 in elmt_tmp:
-            if (elmt2.strip() not in list_mots_liaison) and (elmt2.strip() not in list_kw):
-                list_kw.append(elmt2.strip())
-    return list_kw
-
-
-# In[ ]:
-
-
-
 
