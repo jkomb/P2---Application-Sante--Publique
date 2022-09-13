@@ -59,76 +59,76 @@ help(FETCH_LOAD_DATAS)
 
 # ## Découverte du jeu de données
 
-# In[ ]:
+# In[3]:
 
 
 df_food = FETCH_LOAD_DATAS.load_food_data()
 
 
-# In[ ]:
+# In[4]:
 
 
 df = df_food.copy()
 
 
-# In[ ]:
+# In[5]:
 
 
 df.shape
 
 
-# In[ ]:
+# In[6]:
 
 
 df.head()
 
 
-# In[ ]:
+# In[7]:
 
 
 df.isna().mean().mean()
 
 
-# In[ ]:
+# In[8]:
 
 
 #trier par valeur de taux de remplissage
 msno.bar(df, sort='ascending')
 
 
-# In[ ]:
+# In[9]:
 
 
 #cellule utilisée pour naviguer à traver les colonnes pour se faire une idée des valeurs qu'elles contiennent
 df['traces_tags'].value_counts()[20:]
 
 
-# In[ ]:
+# In[10]:
 
 
 #cellule utilisée pour naviguer dans le jeu de données pour observer les taux de remplissage par bloc
 msno.matrix(df.iloc[:1000,58:])
 
 
-# In[ ]:
+# In[11]:
 
 
 df.isna().mean(axis=1).hist(bins=100)
 
 
-# In[ ]:
+# In[12]:
 
 
 df.isna().mean(axis=1)[df.isna().mean(axis=1) > 0.75]
 
 
-# In[ ]:
+# In[13]:
 
 
 df.isna().mean().hist(bins=100)
 
 
-# In[ ]:
+# In[14]:
 
 
 df.isna().mean()[df.isna().mean() > 0.90]
@@ -163,7 +163,7 @@ df.isna().mean()[df.isna().mean() > 0.90]
 
 # #### 1. Partie générale relative à la base de données des produits
 
-# In[ ]:
+# In[15]:
 
 
 col1 = list(df.columns[:df.columns.get_loc('packaging')])
@@ -177,20 +177,20 @@ col1
 # - La colonne 'product_name' pour permettre à l'utilisateur de notre application de réaliser une recherche textuelle simple
 # 
 
-# In[ ]:
+# In[16]:
 
 
 col_part1_to_drop = [x for x in col1 if x not in ['code','url','last_modified_datetime','product_name' ]]
 df.drop(columns=col_part1_to_drop, inplace=True)
 
 
-# In[ ]:
+# In[17]:
 
 
 df.dropna(subset=['code'],inplace=True, axis=0)
 
 
-# In[ ]:
+# In[18]:
 
 
 df[df['code'].duplicated(keep=False)].sort_values('code', ascending=True).head()
@@ -198,7 +198,7 @@ df[df['code'].duplicated(keep=False)].sort_values('code', ascending=True).head()
 
 # Pour les doublons, à ce stade, nous n'allons garder que l'occurence présentant le plus faible taux de valeurs manquantes.
 
-# In[ ]:
+# In[19]:
 
 
 df['taux_Nan'] = df.isna().mean(axis=1)
@@ -207,31 +207,31 @@ df.drop_duplicates(subset=['code'], keep='first', inplace=True)
 df.drop('taux_Nan', axis=1, inplace=True)
 
 
-# In[ ]:
+# In[20]:
 
 
 df.shape
 
 
-# In[ ]:
+# In[21]:
 
 
 df['code'].isna().mean()
 
 
-# In[ ]:
+# In[22]:
 
 
 df['code'].nunique()/df['code'].shape[0]
 
 
-# In[ ]:
+# In[23]:
 
 
 df_1 = df.copy()
 
 
-# In[ ]:
+# In[24]:
 
 
 df['url'].str.startswith('http').sum()
@@ -246,19 +246,19 @@ df['url'].str.startswith('http').sum()
 
 # #### 2. Partie informative contenant des métadonnées du produit
 
-# In[ ]:
+# In[25]:
 
 
 col2 = list(df.columns[df.columns.get_loc('packaging'):(df.columns.get_loc('countries_fr')+1)])
 
 
-# In[ ]:
+# In[26]:
 
 
 df[col2].isna().mean()
 
 
-# In[ ]:
+# In[27]:
 
 
 # cellule utilisée pour explorer les différents nombres de valeurs uniques
@@ -275,19 +275,19 @@ df['categories_fr'].value_counts()
 # 
 # 
 
-# In[ ]:
+# In[28]:
 
 
 df = df_1.copy()
 
 
-# In[ ]:
+# In[29]:
 
 
 df = df[df['countries_fr'].str.contains('France', regex=False).fillna(False)]
 
 
-# In[ ]:
+# In[30]:
 
 
 L_split = [col.split('_') for col in col2]
@@ -305,33 +305,33 @@ df.drop(columns=col_part2_to_drop, inplace=True)
 # - Nous allons tâcher de synthétiser les catégories tout en ne perdant pas trop de granularité car nous nous appuierons sur les catégories de produits pour faire des recommandations dans notre application
 # - Nous mettrons en évidence la présence de 'viande' et de 'porc' pour les spécificités des certains régimes, la présence de 'poisson', 'fruits de mer', 'oeuf' et 'gluten' sera traitée dans la prochaine partie avec les allergènes.
 
-# In[ ]:
+# In[31]:
 
 
 plt.figure(figsize=(15,8))
 df['categories_fr'].value_counts()[:50].plot.bar()
 
 
-# In[ ]:
+# In[32]:
 
 
 # pour faciliter le travail sur les chaînes de caractères, on les passe toutes en minuscule
 df['categories_fr'] = df['categories_fr'].str.lower()
 
 
-# In[ ]:
+# In[33]:
 
 
 df['categories_fr'].notna().sum()
 
 
-# In[ ]:
+# In[34]:
 
 
 df['categories_fr'].nunique()
 
 
-# In[ ]:
+# In[35]:
 
 
 # on crée un dictionnaire nous renseignant sur le nombre d'occurences de chaque 'sous-catégorie' 
@@ -365,14 +365,14 @@ dict_subcateg('categories_fr')
 # 
 # Nous décidons de catégoriser les produits sans elles, en créant une nouvelle colonne en retirant leur présence, et en ne sélectionnant qu'un nombre réduit de catégories pour décrire chaque produit :
 
-# In[ ]:
+# In[36]:
 
 
 list_cat_to_del = ['aliments et boissons à base de végétaux', "aliments d'origine végétale",
                    'aliments à base de fruits et de légumes', 'boissons']
 
 
-# In[ ]:
+# In[37]:
 
 
 # fonction renvoyant la chaîne de caractère 'value' raccourcie dont on a gardé les 'n_synth' premiers éléments 
@@ -392,7 +392,7 @@ def synthetize_value(value, n_synth, list_cat_to_del=list_cat_to_del):
 
 # Pour avoir une idée de l'effet de notre catégorisation synthétique, on peut regarder combien de nouvelles modalités différentes il nous faut garder pour décrirer tous nos produits :
 
-# In[ ]:
+# In[38]:
 
 
 # on trace pour chaque nombre de sous-catégories que l'on garde pour décrire un produit, l'évolution 
@@ -411,7 +411,7 @@ def display_categ_repart(n_synth, n_newmodality):
     plt.show()
 
 
-# In[ ]:
+# In[39]:
 
 
 display_categ_repart(3,100)
@@ -419,7 +419,7 @@ display_categ_repart(3,100)
 
 # On constate sans surprise, qu'en ne gardant qu'une sous-catégorie pour décrire un produit, avec seulement 20 nouvelles modalités, nous décrvions plus de 90% des produits, mais on obtient alors des catégories trop larges pour que la recommandation d'un produit appartenant à la même catégorie puisse toujours être pertinente. Il suffit de comparer les modalités les plus présentes dans le jeu de données pour 'n_synth' = 1, 2 puis 3 pour s'en apercevoir :
 
-# In[ ]:
+# In[40]:
 
 
 # fonction créant la colonne catégorielle synthétique associée à la valeur de n_synth et contenant les n_synth premières
@@ -431,21 +431,21 @@ def set_col_categ_synth(n_synth):
     df.insert(loc=(df.columns.get_loc('categories_fr')+1), column='categories_synth', value=Serie_categ_synth)
 
 
-# In[ ]:
+# In[41]:
 
 
 set_col_categ_synth(1)
 df['categories_synth'].value_counts()[:10]
 
 
-# In[ ]:
+# In[42]:
 
 
 set_col_categ_synth(2)
 df['categories_synth'].value_counts()[:10]
 
 
-# In[ ]:
+# In[43]:
 
 
 set_col_categ_synth(3)
@@ -460,7 +460,7 @@ df['categories_synth'].value_counts()[:20]
 # 
 # Pour cela, nous allons modifier nos fonctions 'synthetize_value' et 'set_col_categ_synth' :
 
-# In[ ]:
+# In[44]:
 
 
 # fonction retournant une liste des n_synth_max premières catégories d'un produit, en mettant la valeur 'x' si le produit
@@ -479,19 +479,19 @@ def list_synth_value(value, n_synth_max, list_cat_to_del=list_cat_to_del):
     return list_synth
 
 
-# In[ ]:
+# In[45]:
 
 
 list_synth_value(df.loc[df[df["categories_fr"].notna()].head(1).index[0]]['categories_fr'],3)
 
 
-# In[ ]:
+# In[46]:
 
 
 list_synth_value(df.loc[df[df["categories_fr"].isna()].head(1).index[0]]['categories_fr'],3)
 
 
-# In[ ]:
+# In[47]:
 
 
 # fonction créant les colonnes catégorielles hiérarchiques des produits, de la catégorie la plus générale (n_synth=1) à la 
@@ -505,13 +505,13 @@ def set_cols_categ_synth(n_synth_max):
         df.insert(loc=(df.columns.get_loc('categories_fr')+(i+1)), column=col_name, value=Serie_categ_synth)
 
 
-# In[ ]:
+# In[48]:
 
 
 set_cols_categ_synth(3)
 
 
-# In[ ]:
+# In[49]:
 
 
 df[df['categories_fr'].notna()].iloc[:, df.columns.get_loc('categories_fr'):df.columns.get_loc('categories_fr')+4]
@@ -519,20 +519,20 @@ df[df['categories_fr'].notna()].iloc[:, df.columns.get_loc('categories_fr'):df.c
 
 # Créons maintenant les colonnes nous permettant de savoir si un produit contient de la viande (pour les végétariens, végétaliens, et flexitariens) et du porc (pour ceux qui n'en consomment pas quelque soit la raison).
 
-# In[ ]:
+# In[50]:
 
 
 df.insert(loc=(df.columns.get_loc('categories_synth3')+1), column='viande', value=df['categories_fr'].apply(lambda x: 1 if str(x).__contains__('viande') else 0))
 df.insert(loc=(df.columns.get_loc('categories_synth3')+2), column='porc', value=df['categories_fr'].apply(lambda x: 1 if str(x).__contains__('porc') else 0))
 
 
-# In[ ]:
+# In[51]:
 
 
 df[df['porc']==1]['viande'].value_counts()
 
 
-# In[ ]:
+# In[52]:
 
 
 df.loc[df['porc']==1, 'viande']=1
@@ -540,13 +540,13 @@ df.loc[df['porc']==1, 'viande']=1
 
 # Nous n'avons dès lors plus besoin de la colonne 'categories_fr'.
 
-# In[ ]:
+# In[53]:
 
 
 df.drop('categories_fr', axis=1, inplace=True)
 
 
-# In[ ]:
+# In[54]:
 
 
 df_2 = df.copy()
@@ -556,35 +556,33 @@ df_2 = df.copy()
 # - vérifier les données aberrantes des colonnes
 
 # #### 3. Partie 'constitution du produit'
-# 
-# 
 
-# In[ ]:
+# In[55]:
 
 
 df = df_2.copy()
 
 
-# In[ ]:
+# In[56]:
 
 
 col3 = list(df.columns[df.columns.get_loc('ingredients_text'):df.columns.get_loc('serving_size')])
 col3
 
 
-# In[ ]:
+# In[57]:
 
 
 df[col3]
 
 
-# In[ ]:
+# In[58]:
 
 
 df[col3].isna().mean()
 
 
-# In[ ]:
+# In[59]:
 
 
 df[col3].nunique()
@@ -596,20 +594,20 @@ df[col3].nunique()
 # 
 # - Nous combinerons donc ces 2 colonnes en espérant ainsi obtenir une information plus complète.
 
-# In[ ]:
+# In[60]:
 
 
 df.drop(['allergens_fr','traces_tags','traces'], axis=1, inplace=True)
 
 
-# In[ ]:
+# In[61]:
 
 
 col3 = list(df.columns[df.columns.get_loc('ingredients_text'):df.columns.get_loc('serving_size')])
 df[col3].isna().mean()
 
 
-# In[ ]:
+# In[62]:
 
 
 # pour faciliter le travail sur les chaînes de caractères, on les passe toutes en minuscule
@@ -617,34 +615,34 @@ df['traces_fr'] = df['traces_fr'].str.lower()
 df['allergens'] = df['allergens'].str.lower()
 
 
-# In[ ]:
+# In[63]:
 
 
 def get_list_split_str(col_name):
     return df[col_name].value_counts().index.str.split(',').tolist()
 
 
-# In[ ]:
+# In[64]:
 
 
 L_traces = get_list_split_str('traces_fr')
 len(L_traces)
 
 
-# In[ ]:
+# In[65]:
 
 
 L_traces
 
 
-# In[ ]:
+# In[66]:
 
 
 L_allergens = get_list_split_str('allergens')
 len(L_allergens)
 
 
-# In[ ]:
+# In[67]:
 
 
 L_valeurs_allerg = df['traces_fr'].value_counts().index.tolist()+df['allergens'].value_counts().index.tolist()
@@ -652,7 +650,7 @@ ens_valeurs_allerg = set(L_valeurs_allerg)
 len(ens_valeurs_allerg)
 
 
-# In[ ]:
+# In[68]:
 
 
 def get_list_uniques_splits_str(col_name):
@@ -666,20 +664,20 @@ def get_list_uniques_splits_str(col_name):
     return list_tmp
 
 
-# In[ ]:
+# In[69]:
 
 
 L_traces_uniques = get_list_uniques_splits_str('traces_fr')
 len(L_traces_uniques)
 
 
-# In[ ]:
+# In[70]:
 
 
 L_traces_uniques
 
 
-# In[ ]:
+# In[71]:
 
 
 L_traces_reduit = ['blé', 'wheat','gluten', 'orge','cereales', 'epautre', 'cereals', 'glurent', 
@@ -715,20 +713,20 @@ L_traces_reduit = ['blé', 'wheat','gluten', 'orge','cereales', 'epautre', 'cere
 len(L_traces_reduit)
 
 
-# In[ ]:
+# In[72]:
 
 
 L_allerg_uniques = get_list_uniques_splits_str('allergens')
 len(L_allerg_uniques)
 
 
-# In[ ]:
+# In[73]:
 
 
 L_allerg_uniques
 
 
-# In[ ]:
+# In[74]:
 
 
 L_allerg_reduit = ['comté', 'milch', 'vollmilchpulver', 'butterreinfett', 'magermilchpulver', 'fromage', 'emmental', 'lctosa',
@@ -786,7 +784,7 @@ L_allerg_reduit = ['comté', 'milch', 'vollmilchpulver', 'butterreinfett', 'mage
 len(L_allerg_reduit)
 
 
-# In[ ]:
+# In[75]:
 
 
 ens_allerg_uniques = set(L_traces_uniques)
@@ -795,7 +793,7 @@ for element in L_allerg_uniques:
 len(ens_allerg_uniques)
 
 
-# In[ ]:
+# In[76]:
 
 
 ens_allerg_reduit = set(L_traces_reduit)
@@ -812,7 +810,7 @@ len(ens_allerg_reduit)
 # NB : le tri des "mots-clés" des listes de modalités uniques pour obtenir les listes réduites a été réalisé à la main, et bien que l'opération ait été réalisée minutieusement, il y aura des manques que nous considérons comme étant des erreurs de perte d'information inhérentes au processus de transformation que nous avons choisi.
 # - Une autre manière de procéder aurait été de lister l'ensemble des substances les plus courantes appartenant aux 14 catégories d'allergènes qu'il est obligatoire de mentionner sur l'emballage d'un produit, et de les traduire dans toutes les langues de l'union européenne, mais cela aurait donné un tableau trop volumineux et nous n'aurions pas pu capter les mots-clés relevant de fautes d'orthographes, les variations de mots avec ou sans accent, ainsi que les mots au pluriel comme nous avons pu le faire ici.
 
-# In[ ]:
+# In[77]:
 
 
 set_gluten = set(['gluten', 'glurent', 'glutn', 'glúten'
@@ -885,45 +883,45 @@ dict_allerg = {'gluten': set_gluten, 'oeuf':set_oeuf, 'fruits_coque':set_fruits_
                'moutarde':set_moutarde}
 
 
-# In[ ]:
+# In[78]:
 
 
 for key in dict_allerg.keys():
     print(key)
 
 
-# In[ ]:
+# In[79]:
 
 
 len(dict_allerg.keys())
 
 
-# In[ ]:
+# In[80]:
 
 
 for substance in dict_allerg['oeuf']:
     print(substance)
 
 
-# In[ ]:
+# In[81]:
 
 
 df.insert(loc=(df.columns.get_loc('traces_fr')+1), column='substances_allergenes', value=(df['traces_fr'] + ',' + df['allergens']))
 
 
-# In[ ]:
+# In[82]:
 
 
 df['substances_allergenes'].fillna('inconnues', inplace=True)
 
 
-# In[ ]:
+# In[83]:
 
 
 df['substances_allergenes']
 
 
-# In[ ]:
+# In[84]:
 
 
 df['substances_allergenes'][253925].__contains__('lactose')
@@ -931,7 +929,7 @@ df['substances_allergenes'][253925].__contains__('lactose')
 
 # Nous constatons ici que nous aurions pu travailler sur la colonne issue de la jointure des colonnes 'traces_fr' et 'allergenes' car elle présente un nombre de valeurs uniques plus petit que la jointure des listes de valeurs uniques de ces mêmes colonnes (8367 contre 11788).
 
-# In[ ]:
+# In[85]:
 
 
 # nous définissons la fonction qui nous indiquera si un produit contient une substance de la catégorie passée en argument
@@ -947,7 +945,7 @@ def contains_allerg(cat_allerg, value):
     return n
 
 
-# In[ ]:
+# In[86]:
 
 
 def set_cols_cat_allerg():
@@ -958,31 +956,31 @@ def set_cols_cat_allerg():
         k+=1
 
 
-# In[ ]:
+# In[87]:
 
 
 set_cols_cat_allerg()
 
 
-# In[ ]:
+# In[88]:
 
 
 df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde']
 
 
-# In[ ]:
+# In[89]:
 
 
 df['soja'].sum()
 
 
-# In[ ]:
+# In[90]:
 
 
 df.shape
 
 
-# In[ ]:
+# In[91]:
 
 
 (df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde'].sum(axis=1) == 0).value_counts()
@@ -991,7 +989,7 @@ df.shape
 # Nous avons perdu l'information de présence d'allergènes pour uniquement 7 produits sur la totalité (0.06%).
 # Nous traitons ces produits réticents à la main.
 
-# In[ ]:
+# In[92]:
 
 
 df[df['substances_allergenes'] != 'inconnues'][df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde'].sum(axis=1) == 0]['substances_allergenes']
@@ -999,7 +997,7 @@ df[df['substances_allergenes'] != 'inconnues'][df[df['substances_allergenes'] !=
 
 # Nous ajoutons la valeur 'céleri' à notre ensemble 'set_celeri'.
 
-# In[ ]:
+# In[93]:
 
 
 set_celeri.clear()
@@ -1010,13 +1008,13 @@ dict_allerg = {'oeuf':set_oeuf, 'fruits_coque':set_fruits_coque, 'lupin':set_lup
                'moutarde':set_moutarde}
 
 
-# In[ ]:
+# In[94]:
 
 
 df['celeri'] = df['substances_allergenes'].apply(lambda value: contains_allerg('celeri', value))
 
 
-# In[ ]:
+# In[95]:
 
 
 (df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde'].sum(axis=1) == 0).value_counts()
@@ -1024,20 +1022,90 @@ df['celeri'] = df['substances_allergenes'].apply(lambda value: contains_allerg('
 
 # On retrouve notre ligne mentionnant du 'réglisse' qui n'est pas une substance allergène à mentionner obligatoirement par le fabricant. Nous n'avons désormais plus besoin des colonnes 'traces_fr' et 'allergens'.
 
-# In[ ]:
+# In[96]:
 
 
 df.drop(['traces_fr','allergens'], axis=1, inplace=True)
 
 
-# In[ ]:
+# In[97]:
 
 
 df.shape
 
 
-# In[ ]:
+# In[98]:
 
 
 df_3 = df.copy()
+
+
+# #### 4. Partie 'informations diverses'
+
+# In[99]:
+
+
+col4 = list(df.columns[df.columns.get_loc('serving_size'):df.columns.get_loc('energy_100g')])
+col4
+
+
+# In[104]:
+
+
+df[col4].isna().mean()
+
+
+# In[133]:
+
+
+#cellule utilisée pour explorer les différentes valeurs des colonnes
+df['no_nutriments'].value_counts()[:15]
+
+
+# Nous n'allons conserver que les colonnes suivantes :
+# - 'additives_n' : qui nous renseigne sur le nombre d'additifs présents dans le produit
+# - 'additives_fr' : qui nous renseignent sur les additifs présents (pour évaluer leur dangerosité)
+# - 'ingredients_from_palm_oil_n' : qui nous renseigne sur le nombre d'ingrédients issus de l'huile de palme, présents dans le produit
+# - 'ingredients_that_may_be_from_palm_oil_n' : qui nous renseigne sur le nombre d'ingrédients peut-être issus de l'huile de palme, présents dans le produit
+# - 'nutrition_grade_fr' : qui nous renseigne sur le NUTRISCORE du produit
+# - 'image_small_url' : qui nous fournit l'url de l'image du produit que l'on pourra afficher dans notre application
+# 
+# Les autres colonnes sont soit vides, soit nous donnent une informations que nous n'allons pas exploiter, ou bien sont moins compréhensible ou synthétique.
+
+# In[135]:
+
+
+col_part4_to_drop = col4
+col_part4_to_drop.remove('additives_n')
+col_part4_to_drop.remove('additives_fr')
+col_part4_to_drop.remove('ingredients_from_palm_oil_n')
+col_part4_to_drop.remove('ingredients_that_may_be_from_palm_oil_n')
+col_part4_to_drop.remove('nutrition_grade_fr')
+col_part4_to_drop.remove('image_small_url')
+df.drop(columns=col_part4_to_drop, inplace=True)
+
+
+# In[136]:
+
+
+col4 = list(df.columns[df.columns.get_loc('additives_n'):df.columns.get_loc('energy_100g')])
+df[col4].head()
+
+
+# In[137]:
+
+
+df[col4].isna().mean()
+
+
+# In[138]:
+
+
+df_4 = df.copy()
+
+
+# In[ ]:
+
+
+
 
