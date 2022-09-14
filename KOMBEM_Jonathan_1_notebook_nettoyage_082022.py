@@ -249,16 +249,22 @@ df['url'].str.startswith('http').sum()
 # In[25]:
 
 
-col2 = list(df.columns[df.columns.get_loc('packaging'):(df.columns.get_loc('countries_fr')+1)])
+df = df_1.copy()
 
 
 # In[26]:
 
 
-df[col2].isna().mean()
+col2 = list(df.columns[df.columns.get_loc('packaging'):(df.columns.get_loc('countries_fr')+1)])
 
 
 # In[27]:
+
+
+df[col2].isna().mean()
+
+
+# In[28]:
 
 
 # cellule utilisée pour explorer les différents nombres de valeurs uniques
@@ -271,15 +277,9 @@ df['categories_fr'].value_counts()
 # - Ensuite, nous allons supprimer toutes les colonnes "_tags" car elles comportent les mêmes données que les colonnes auxquelles elles sont associées, mais avec une mise en forme qui les rend plus difficilement lisibles.
 #     
 # 
-# - Nous allons également supprimer les colonnes 'cities', 'cities_tags' ainsi que 'purchase_places' car nous considérons que les produits sont disponibles partout en France, ainsi que la colonne 'categories' qui est redondante avec la colonne 'categories_fr' et moins synthétique (moins de valeurs uniques pour un taux de remplissage identique).
+# - Nous allons également supprimer les colonnes 'cities', 'cities_tags' ainsi que 'purchase_places' car nous considérons que les produits sont disponibles partout en France, ainsi que la colonne 'categories' qui est redondante avec la colonne 'categories_fr' et moins synthétique (moins de valeurs uniques pour un taux de remplissage identique) et pour les mêmes raisons, nous allons supprimer les colonnes 'emb_codes' et 'first_packaging_code_geo' qui nous renseignent sur la ville dans laquelle le produit a été conditionné (ville française pour l'information dans 'first_packaging_code_geo', pas nécessairement en France pour l'information dans 'emb_codes', <i><u>mais l'on suppose ici qu'un produit emballé à l'étranger, vendu en France, a été transformé à l'étranger</i></u>**, et nous avons donc l'information dans la colonne 'manufacturing_places').
 # 
-# 
-
-# In[28]:
-
-
-#df = df_1.copy()
-
+# ** Nous espérons vraiment que c'est le cas...
 
 # In[29]:
 
@@ -298,10 +298,12 @@ col_part2_to_drop.append('countries_fr')
 col_part2_to_drop.append('purchase_places')
 col_part2_to_drop.append('cities')
 col_part2_to_drop.append('categories')
+col_part2_to_drop.append('emb_codes')
+col_part2_to_drop.append('first_packaging_code_geo')
 df.drop(columns=col_part2_to_drop, inplace=True)
 
 
-# Analysons la colonne 'packaging' :
+# <b>Analysons la colonne 'packaging' :</b>
 
 # In[31]:
 
@@ -480,16 +482,16 @@ set_cols_cat_allerg()
 df[df['packaging'].notna()].loc[:,'carton':'suremballage']
 
 
-# In[48]:
+# In[45]:
 
 
-(df[df['packaging'].notna()].loc[:,'carton':'suremballage'].sum(axis=1) == 0).value_counts()/df[df['packaging'].notna()].shape[0]
+df[df['packaging'].notna()].loc[:,'packaging'][df[df['packaging'].notna()].loc[:,'carton':'suremballage'].sum(axis=1) == 0].value_counts()[:20]
 
 
 # In[46]:
 
 
-df[df['packaging'].notna()].loc[:,'packaging'][df[df['packaging'].notna()].loc[:,'carton':'suremballage'].sum(axis=1) == 0].value_counts()[:20]
+(df[df['packaging'].notna()].loc[:,'carton':'suremballage'].sum(axis=1) == 0).value_counts()/df[df['packaging'].notna()].shape[0]
 
 
 # On s'aperçoit qu'avec notre tableau disjonctif, nous récupérons légèrement plus de 95% de l'information contenue dans la colonne 'packaging', le reste n'étant pas exploitable en l'état sans faire la correspondance avec le nom du produit, qui peut lui-même nous renseigner sur l'emballage utilisé.
@@ -498,43 +500,43 @@ df[df['packaging'].notna()].loc[:,'packaging'][df[df['packaging'].notna()].loc[:
 
 # Nous n'avons désormais plus besoin de la colonne 'packaging' :
 
-# In[49]:
+# In[47]:
 
 
 df.drop('packaging', axis=1, inplace=True)
 
 
-# Nous allons maintenant travailler sur la colonne 'categories_fr'.
+# <b>Nous allons maintenant travailler sur la colonne 'categories_fr'.</b>
 # - Nous allons tâcher de synthétiser les catégories tout en ne perdant pas trop de granularité car nous nous appuierons sur les catégories de produits pour faire des recommandations dans notre application
 # - Nous mettrons en évidence la présence de 'viande' et de 'porc' pour les spécificités des certains régimes, la présence de 'poisson', 'fruits de mer', 'oeuf' et 'gluten' sera traitée dans la prochaine partie avec les allergènes.
 
-# In[ ]:
+# In[48]:
 
 
 plt.figure(figsize=(15,8))
 df['categories_fr'].value_counts()[:50].plot.bar()
 
 
-# In[ ]:
+# In[49]:
 
 
 # pour faciliter le travail sur les chaînes de caractères, on les passe toutes en minuscule
 df['categories_fr'] = df['categories_fr'].str.lower()
 
 
-# In[ ]:
+# In[50]:
 
 
 df['categories_fr'].notna().sum()
 
 
-# In[ ]:
+# In[51]:
 
 
 df['categories_fr'].nunique()
 
 
-# In[ ]:
+# In[52]:
 
 
 # on crée un dictionnaire nous renseignant sur le nombre d'occurences de chaque 'sous-catégorie' 
@@ -568,14 +570,14 @@ dict_subcateg('categories_fr')
 # 
 # Nous décidons de catégoriser les produits sans elles, en créant une nouvelle colonne en retirant leur présence, et en ne sélectionnant qu'un nombre réduit de catégories pour décrire chaque produit :
 
-# In[ ]:
+# In[53]:
 
 
 list_cat_to_del = ['aliments et boissons à base de végétaux', "aliments d'origine végétale",
                    'aliments à base de fruits et de légumes', 'boissons']
 
 
-# In[ ]:
+# In[54]:
 
 
 # fonction renvoyant la chaîne de caractère 'value' raccourcie dont on a gardé les 'n_synth' premiers éléments 
@@ -593,12 +595,13 @@ def synthetize_value(value, n_synth, list_cat_to_del=list_cat_to_del):
     return synth_value
 
 
-# Pour avoir une idée de l'effet de notre catégorisation synthétique, on peut regarder combien de nouvelles modalités différentes il nous faut garder pour décrirer tous nos produits :
+# Pour avoir une idée de l'effet de notre catégorisation synthétique, on peut regarder combien de nouvelles modalités différentes il nous faut garder pour décrirer tous nos produits (dans l'optique d'éventuellement réaliser un tableau disjonctif complet ici aussi):
 
-# In[ ]:
+# In[55]:
 
 
-# on trace pour chaque nombre de sous-catégories que l'on garde pour décrire un produit, l'évolution 
+# on trace pour chaque nombre de sous-catégories que l'on garde pour décrire un produit, l'évolution de la proportion
+# de produits que l'on décrit en fonction du nombre de nouvelles modalités que l'on garde
 def display_categ_repart(n_synth, n_newmodality):
     L_plot = []
     plt.figure(figsize=(12,6))
@@ -614,7 +617,7 @@ def display_categ_repart(n_synth, n_newmodality):
     plt.show()
 
 
-# In[ ]:
+# In[56]:
 
 
 display_categ_repart(3,100)
@@ -622,7 +625,7 @@ display_categ_repart(3,100)
 
 # On constate sans surprise, qu'en ne gardant qu'une sous-catégorie pour décrire un produit, avec seulement 20 nouvelles modalités, nous décrvions plus de 90% des produits, mais on obtient alors des catégories trop larges pour que la recommandation d'un produit appartenant à la même catégorie puisse toujours être pertinente. Il suffit de comparer les modalités les plus présentes dans le jeu de données pour 'n_synth' = 1, 2 puis 3 pour s'en apercevoir :
 
-# In[ ]:
+# In[57]:
 
 
 # fonction créant la colonne catégorielle synthétique associée à la valeur de n_synth et contenant les n_synth premières
@@ -634,21 +637,21 @@ def set_col_categ_synth(n_synth):
     df.insert(loc=(df.columns.get_loc('categories_fr')+1), column='categories_synth', value=Serie_categ_synth)
 
 
-# In[ ]:
+# In[58]:
 
 
 set_col_categ_synth(1)
 df['categories_synth'].value_counts()[:10]
 
 
-# In[ ]:
+# In[59]:
 
 
 set_col_categ_synth(2)
 df['categories_synth'].value_counts()[:10]
 
 
-# In[ ]:
+# In[60]:
 
 
 set_col_categ_synth(3)
@@ -657,13 +660,13 @@ df['categories_synth'].value_counts()[:20]
 
 # Pour la suite de l'étude nous allons garder les colonnes obtenues pour n_synth = 2 et 3, ainsi, si nous ne trouvons pas de produits à recommander dans la catégorie d'un produit associée à n_synth = 3, nous pourrons proposer un élargissement de recommandation à la catégorie de ce produit associée à n_synth = 2 à défaut.
 
-# Pour la suite de l'étude nous allons créer 3 colonnes catégorielles chacune comportant la valeur de la sous-catégorie de niveau 0, 1 et 2 (ie. n_synth = 1, 2 et 3). Il sera alors facile de proposer des produits similaires à leur recherche nos utilisateurs finaux, et à défaut, de proposer un élargissement de recherche en proposant des produits de la même catégorie parent, ainsi de suite.. 
+# Pour la suite de l'étude nous n'allons non pas créer un tabelau disjonctif complet, mais créer 3 colonnes catégorielles chacune comportant la valeur de la sous-catégorie de niveau 0, 1 et 2 (ie. n_synth = 1, 2 et 3). Il sera alors facile de proposer des produits similaires à leur recherche nos utilisateurs finaux, et à défaut, de proposer un élargissement de recherche en proposant des produits de la même catégorie parent, ainsi de suite.. 
 # 
 # Par ailleurs, il sera possible d'encoder chacune des colonnes pour faciliter le traitement les traitements numériques de notre jeu de données ultérieurement !
 # 
 # Pour cela, nous allons modifier nos fonctions 'synthetize_value' et 'set_col_categ_synth' :
 
-# In[ ]:
+# In[61]:
 
 
 # fonction retournant une liste des n_synth_max premières catégories d'un produit, en mettant la valeur 'x' si le produit
@@ -685,19 +688,19 @@ def list_synth_value(value, n_synth_max, list_cat_to_del=list_cat_to_del):
     return list_synth
 
 
-# In[ ]:
+# In[62]:
 
 
 list_synth_value(df.loc[df[df["categories_fr"].notna()].head(1).index[0]]['categories_fr'],3)
 
 
-# In[ ]:
+# In[63]:
 
 
 list_synth_value(df.loc[df[df["categories_fr"].isna()].head(1).index[0]]['categories_fr'],3)
 
 
-# In[ ]:
+# In[64]:
 
 
 # fonction créant les colonnes catégorielles hiérarchiques des produits, de la catégorie la plus générale (n_synth=1) à la 
@@ -711,13 +714,13 @@ def set_cols_categ_synth(n_synth_max):
         df.insert(loc=(df.columns.get_loc('categories_fr')+(i+1)), column=col_name, value=Serie_categ_synth)
 
 
-# In[ ]:
+# In[65]:
 
 
 set_cols_categ_synth(3)
 
 
-# In[ ]:
+# In[66]:
 
 
 df[df['categories_fr'].notna()].iloc[:, df.columns.get_loc('categories_fr'):df.columns.get_loc('categories_fr')+4]
@@ -725,34 +728,419 @@ df[df['categories_fr'].notna()].iloc[:, df.columns.get_loc('categories_fr'):df.c
 
 # Créons maintenant les colonnes nous permettant de savoir si un produit contient de la viande (pour les végétariens, végétaliens, et flexitariens) et du porc (pour ceux qui n'en consomment pas quelque soit la raison).
 
-# In[ ]:
+# In[67]:
 
 
 df.insert(loc=(df.columns.get_loc('categories_synth3')+1), column='viande', value=df['categories_fr'].apply(lambda x: 1 if str(x).__contains__('viande') else 0))
 df.insert(loc=(df.columns.get_loc('categories_synth3')+2), column='porc', value=df['categories_fr'].apply(lambda x: 1 if str(x).__contains__('porc') else 0))
 
 
-# In[ ]:
+# In[68]:
 
 
-df[df['porc']==1]['viande'].value_counts()
+df[df['porc']==1].loc[df['viande']==0]
 
 
-# In[ ]:
+# In[69]:
 
 
-df.loc[df['porc']==1, 'viande']=1
+df.loc[df['porc']==1,'viande']=1
+
+
+# In[70]:
+
+
+df.loc[df['product_name'].str.contains('Gélatine').fillna(False), 'viande']=0
+
+
+# In[71]:
+
+
+df[df['porc']==1].loc[df['viande']==0]
 
 
 # Nous n'avons dès lors plus besoin de la colonne 'categories_fr' ni 'categories_synth'.
 
-# In[ ]:
+# In[72]:
 
 
 df.drop(columns=['categories_fr','categories_synth'], axis=1, inplace=True)
 
 
-# In[ ]:
+# <b>Intéressons nous maintenant aux colonnes 'origins' et 'manufacturing_places'.</b>
+
+# Le but ici sera d'associer à chaque localisation un continent, et nous pourrons ainsi donner un poids (négatif) à chaque continent en fonction de sa "distance" avec la France, pour prendre en compte l'impact environnemental dûe à la distance de transport.
+# 
+# Pour simplifier notre analyse, nous faisons ici l'hypothèse que <u>l'impact environnemental des moyens de transports des produits ne dépend que de la 'distance'</u>.
+
+# In[73]:
+
+
+df['origins'] = df['origins'].str.lower()
+df['manufacturing_places'] = df['manufacturing_places'].str.lower()
+
+
+# In[74]:
+
+
+df['origins'].value_counts()
+
+
+# In[75]:
+
+
+df['manufacturing_places'].value_counts()
+
+
+# In[76]:
+
+
+# on regroupe toutes les localisations contenant 'france' dans 'france' pour dégrossir 
+func = lambda x : 'france' if str(x).__contains__('france') else x
+df['origins'] = df['origins'].apply(func)
+df['manufacturing_places'] = df['manufacturing_places'].apply(func)
+
+
+# In[77]:
+
+
+df['origins'][df['origins'].str.contains('france').fillna(False)].value_counts()
+
+
+# In[78]:
+
+
+df['manufacturing_places'][df['manufacturing_places'].str.contains('france').fillna(False)].value_counts()
+
+
+# In[79]:
+
+
+# on charge un dataframe contenant les correspondances pays-continent en français dont nous avons besoin
+df_continents = pd.read_csv('Liste-Excel-des-pays-du-monde-gratuit-capitales-continent-nationalites.csv', delimiter=';', on_bad_lines='skip')
+
+
+# In[80]:
+
+
+df_continents.iloc[:,0] = df_continents.iloc[:,0].str.lower()
+df_continents.iloc[:,1] = df_continents.iloc[:,1].str.lower()
+
+
+# In[81]:
+
+
+df_continents['Continent'].value_counts()
+
+
+# In[82]:
+
+
+# on ne souhaite que 5 continents principaux, donc on regroupe les amériques, et on renomme la colonne 'Nom français'
+# pour l'appeler de manière plus intuitive
+df_continents['Continent'] = df_continents['Continent'].apply(lambda x: 'amérique' if x.__contains__('amérique') else x)
+df_continents = df_continents.rename(columns={'Nom français':'Pays'})
+
+
+# In[83]:
+
+
+# on crée la liste L_pays pour faciliter l'exploration des pays, plus simple avec une liste qu'un objet Series
+L_pays = [element for element in df_continents['Pays']]
+L_pays
+
+
+# In[84]:
+
+
+# on simplifie les noms de pays dans notre dataframe pays-continent pour faciliter la correspondance avec notre jeu de données
+func = lambda x : x.split('(')[0].strip()
+df_continents['Pays'] = df_continents['Pays'].apply(func)
+
+
+# In[85]:
+
+
+L_pays = [x.split('(')[0].strip() for x in L_pays]
+L_pays
+
+
+# A ce stade, pour accélérer notre travail, nous allons remplacer chaque localisation dans nos colonnes 'origins' et 'manufacturing_places' par le pays qu'elle contient, et qui fait partie de la colonne 'Pays' de notre dataframe df_continent car alors on pourra lui associer un continent :
+
+# In[86]:
+
+
+df_continents['Pays'][:20]
+
+
+# In[87]:
+
+
+# nous définissons la fonction qui nous donnera le pays présent dans une localisation, s'il fait partie du dataframe
+# df_continent, sinon la localisation et nous devrons travailler sur sa mise en forme plus manuellement
+
+def belong_to_country(value):
+    country = ''
+    for element in df_continents['Pays']:
+        contains = str(value).__contains__(element)
+        if contains:
+            country=element
+            break
+        else:
+            country=value
+    return country
+
+
+# In[88]:
+
+
+df['origins'] = df['origins'].apply(belong_to_country)
+df['origins'].value_counts()
+
+
+# In[89]:
+
+
+df['manufacturing_places'] = df['manufacturing_places'].apply(belong_to_country)
+df['manufacturing_places'].value_counts()
+
+
+# A ce stade, nous sommes respectivement passés de 1828 à 1153 (-37%) et de 1741 à 1002 (-43%) valeurs uniques de localisation dans nos colonnes 'origins' et 'manufacturing_places', avec un plus grand nombre de valeur en conformité avec notre dataframe <b>df_continents</b>.
+
+# In[90]:
+
+
+func = lambda x: False if x in df_continents['Pays'].tolist() else True
+df['origins'][df['origins'].apply(func)].value_counts()
+
+
+# A partir d'ici, il nous faut créer un dictionnaire pour mettre en forme nos colonnes 'origins' et 'manufacturing_places' pour que leurs valeurs correspondent à celle de notre colonne 'Pays' dans le dataframe df_continents.
+# 
+# 
+# Par exemple, nous remarquons que ce dernier ne distingue pas les différents pays du royaume-uni et ne contient pas 'équateur...
+# De même, certains pays de nos colonnes 'origins' et 'manufacturing_places' ne sont pas en français, ou omettent des accents...
+# 
+# Nous créons donc un dictionnaire de mise en forme des valeurs des colonnes 'origins' et 'manufacturing_places' vers la forme présente dans la colonne 'Pays' de df_continents, et un dictionnaire pour simplifier cette dernière colonne :
+
+# In[91]:
+
+
+func = lambda x: False if x in df_continents['Pays'].tolist() else True
+df['manufacturing_places'][df['manufacturing_places'].apply(func)].value_counts()
+
+
+# In[92]:
+
+
+dict_pays_regroup_df = {'belg':'belgique', 'spa':'espagne','basque':'espagne','pays':'pays-bas', 'ital':'italie', 
+                        'royaume':'royaume-uni', 'grande bretagne':'royaume-uni',
+                        "grande-bretagne":'royaume-uni', 'angleterre':'royaume-uni', 'portugal':'portugal', 'tha':'thaïlande',
+                        'cosse':'royaume-uni', 'taiwan':'taïwan', 'deutschland':'allemagne', 'normandie':'france',
+                        'switzerland':'suisse', 'franche':'france', 'unis':'états-unis', 'allemagne':'allemagne',
+                        'écosse':'royaume-uni', 'germany':'allemagne', 'uk':'royaume-uni', 'irlande':'royaume-uni', 
+                        'bretagne':'france', 'europ':'roumanie', 'agriculture ue':'roumanie', 'quateur':'colombie',
+                        'indien':'inde', 'ue / non ue':'roumanie', 'pacifique nord-est':'états-unis', 'india':'inde',
+                        'proven':'france', 'antille':'dominicaine', 'kingdom':'royaume-uni', 'alaska':'états-unis',
+                        'corse':'france', 'latine':'brésil', 'ue,non ue':'roumanie', 'usa':'états-unis',
+                        'agricultura ue,agricultura no ue':'roumanie', 'u.e.':'roumanie', 'china':'chine',
+                        'ivoire':"côte d'ivoire", 'savoie':'france', 'ue et non ue':'roumanie', 'fao 34':'sénégal',
+                        'champagne':'france', 'nouvelle zélande':'nouvelle-zélande',
+                        'agen':'france', 'gironde':'france', 'schweiz':'suisse', 'élaboré en ue':'roumanie', 
+                        'vezelay':'france', 'poitou':'france', 'salvetat':'france', 'domingue':'dominicaine', 
+                        'aisne':'france','suri':'suriname', 'normandie':'france', 'polska':'pologne',
+                        'poland':'pologne','mer du nord':'norvège', 'lorraine':'france', 'auvergne':'france',
+                        'ecuador':'mexique', 'alpe':'france', 'atlantique centre est':'sénégal', 
+                        'atlantique nord est':'norvège', 'loire':'france', 'atlantique sud-ouest':'brésil',
+                        'atlantique n-e':'norvège', 'asie':'chine', 'england':'royaume-uni', 'origine u':'roumanie',
+                        'floride':'états-unis', 'riesling':'france', 'palestine':'liban', 'deutchland':'allemagne',
+                        'algerie':'algérie', 'pacifique centre-ouest':'indonésie','modène':'italie',
+                        'holland':'pays-bas', 'dordogne':'france', 'isigny':'france', 'afrique':'sénégal', 'mornant':'france',
+                        'strasbourg':'france', 'manche':'royaume-uni', 'bordeaux':'france', 'gréce':'grèce', 
+                        'costa':'costa rica', 'fao 51':'madagascar', 'voges':'france', 'adour':'france', 'roussillon':'france',
+                        'rhône':'france', 'guat':'guatemala', 'gascogne':'france', 'south africa':'afrique du sud',
+                        'aveyron':'france', 'galmier':'france', 'abbat':'france', 'australi':'australie', 'garonne':'france',
+                        'ducey':'france', 'royaume-uni':'royaume-uni', 'gascogne':'france', 'sri':'sri lanka', 'gard':'france',
+                        'mouilleron':'france', 'québec':'canada', 'atlantique nord-est':'norvège', 'fao 67':'états-unis',
+                        'fao 61':'japon', 'soultzmatt':'france', 'cère':'france', 'mézières':'france', 'landes':'france',
+                        'atlantique centre-est':'sénégal', 'bayonne':'france', 'revel':'france', 'fao 71':'indonésie',
+                        'zeland':'nouvelle-zélande', 'figeac':'france', 'laval':'france', 'aquitaine':'france',
+                        'tschechien':'république tchèque', 'pyrénées':'france', 'cotentin':'france', 'anjou':'france',
+                        'auggen':'allemagne', 'amérique':'mexique', 'orme':'france', 'fa0 27':'norvège', 'suede':'suède',
+                        'scotland':'royaume-uni', 'région centre':'france', 'trente':'italie', 'forez':'france',
+                        'malaysie':'malaisie', 'sicile':'italie', 'benoît':'france', 'pacifique centre est':'états-unis',
+                        'maromme':'france', 'morbihan':'france', 'pacifique nord-ouest':'japon', 'brasil':'brésil',
+                        'ouest pacifique':'nouvelle-zélande', 'tcheque':'république tchèque', 'peru':'pérou',
+                        'jamaika':'jamaïque', 'toscane':'italie', 'austria':'autriche', 'adeline':'france', 
+                        'guérande':'france', 'mayenne':'france', 'kingdom':'royaume-uni', 'fao 51':'madagascar',
+                        'noirmoutier':'france', 'est-centre':'france', 'giovanni':'italie', 'gers':'france',
+                        'alba la romaine':'france', 'beuste':'france', 'vosge':'france', 'arcachon':'france',
+                        'ventoux':'france', 'chateau':'france', 'vitell':'france', 'hépar':'france', 'montargis':'france',
+                        'vermont':'france', 'belle':'france', 'việt nam':'vietnam', 'neuseeland':'nouvelle-zélande',
+                        'uae':'émirats arabes unis', 'saverne':'france', 'ariège':'france', 'netherland':'pays-bas',
+                        'ardèche':'france', 'jean':'france', 'marcel':'france', 'hawaï':'états-unis', 'abbaye':'france',
+                        'salvador':'guatemala', 'norv':'norvège', 'itália':'italie', 'belique':'belgique',
+                        'perou':'pérou', 'guyane':'guyane française', 'korea':'corée', 'beauregard':'france',
+                        'fran':'france', 'jap':'japon', 'picardie':'france', 'igp':'france', 'laiterie':'france',
+                        'betteville':'france', 'jura':'france', 'avelin':'france', 'armagnac':'france', "pays d'oc":'france',
+                        'mont-dore':'france', 'nederland':'pays-bas', 'bordelais':'france', 'catalan':'espagne',
+                        'coruna':'espagne', 'evian':'france', 'évian':'france', 'boulogne':'france', 'vallée des gaves':'france',
+                        'angers':'france', 'norway':'norvège', 'chile':'chili', 'couëron':'bretagne', 'montclar':'france',
+                        'crète':'grèce', 'bali':'indonésie', 'poska':'pologne', 'charente':'france', 
+                        'macédoine':'macédoine du nord', 'ain':'france', 'languedoc':'france', 'vendée':'france',
+                        'flandres':'belgique', 'saumur':'france', 'conserverie':'france', 'laiterie':'france', 
+                        'écrins':'france', 'sweden':'suède', 'mexi':'mexique', 'cavaillon':'france', 'limousin':'france',
+                        'genève':'suisse', '64290':'france', 'fromagerie':'france', 'gênes':'italie', 'alemanha':'allemagne',
+                        'méxique':'mexique', 'compiègne':'france', "sud de l'europe":'italie', 'pays bas':'pays-bas',
+                        'grenoble':'france', 'camargue':'france', 'zealand':'nouvelle-zélande', 'guilliers':'france', 
+                        'orléan':'france', 'clairvic':'france', 'isr':'israël', 'tibet':'chine', 'plancoët':'france',
+                        'argentina':'argentine', 'soultzmatt':'france', 'puys':'france', 'marceles':'france',
+                        'gouzon':'france', 'rietberg':'allemagne', 'nillère':'france', 'villers':'france', 
+                        'maulévrier':'france', 'vaucluse':'france', 'românia':'roumanie', 'atlantique centre-ouest':'mexique',
+                        'bresse':'france', 'mont blanc':'france', 'tourouzelle':'france', 'source':'france', 'wissous':'france',
+                        'léman':'suisse', 'carcassonne':'france', 'chelles':'france', 'grece':'grèce', 'greece':'grèce',
+                        'malville':'france', 'himalaya':'chine', 'léognan':'france', 'île de ré':'france', 'bergues':'france',
+                        'swaziland':'afrique du sud', 'montélimar':'france', 'améric':'mexique', 'kénya':'kenya', 
+                        'tailandia':'thaïlande', 'saint ouen':'france', 'sarthe':'france', 'yunnan':'chine', 
+                        'charenton':'france', 'méditerr':'grèce', 'cee':'roumanie', 'alsace':'france', 'alemania':'allemagne',
+                        'marseille':'france', 'states':'états-unis', 'californie':'états-unis', 'montreuil':'france',
+                        'gemenos':'france', 'danmark':'danemark', 'vill':'france', 'lithuanie':'lituanie', 
+                        'griechenland':'grèce', 'denmark':'danemark', 'amsterdam':'pays-bas', 'gouvieux':'france',
+                        'bourgogne':'france', 'bourgb':'france', 'bourge':'france', 'bocage':'france', 'abbé':'france',
+                        'annecy':'france', 'flavigny':'france', 'sarbazan':'france', 'mesnay':'france', 'serbia':'serbie',
+                        'fleurance':'france', 'aubagne':'france', 'louâtre':'france', 'dijon':'france', 'finland':'finlande',
+                        'larressore':'france', 'delvert':'france', 'fécamp':'france', 'vertou':'france', 'limoges':'france',
+                        'massegros':'france', 'россия':'russie'
+                       }
+
+dict_pays_df_cont = {'taïwan':'taïwan', 'royaume-uni':'royaume-uni','tchéquie':'république tchèque', 'viet':'vietnam', 
+                     "états-unis":"états-unis"}
+
+len(dict_pays_regroup_df), len(dict_pays_df_cont)
+
+
+# In[93]:
+
+
+# cellule utilisée pour analyser les différentes localisation contenant un certain mot-clé
+clé = 'россия'
+df['manufacturing_places'][df['manufacturing_places'].str.contains(clé).fillna(False)].value_counts()
+
+
+# In[94]:
+
+
+# cellule utilisée pour naviguer entre les différents pays pour vérifier leur orthographe, ou leur simple présence
+# (pour remplacer un pays absent par un pays voisin par exemple : tibet, swaziland, etc.)
+L_pays
+
+
+# In[95]:
+
+
+# fonction pour modifier les localisations selon le dictionnaire passé en argument
+def replace_countries(dict_country, value):
+    country = ''
+    for key in dict_country.keys():
+        contains = str(value).__contains__(key)
+        if contains:
+            country=dict_country[key]
+            break
+        else:
+            country=value
+    return country
+
+
+# In[96]:
+
+
+df_continents['Pays'] = df_continents['Pays'].apply(lambda x: replace_countries(dict_pays_df_cont, x))
+
+
+# In[97]:
+
+
+df['origins'] = df['origins'].apply(lambda x: replace_countries(dict_pays_regroup_df, x))
+
+
+# In[98]:
+
+
+df['manufacturing_places'] = df['manufacturing_places'].apply(lambda x: replace_countries(dict_pays_regroup_df, x))
+
+
+# In[99]:
+
+
+func = lambda x: False if x in df_continents['Pays'].tolist() else True
+df['origins'][df['origins'].apply(func)].nunique(), df['origins'][df['origins'].apply(func)].count()/df['origins'].notna().sum()
+
+
+# In[100]:
+
+
+func = lambda x: False if x in df_continents['Pays'].tolist() else True
+df['manufacturing_places'][df['manufacturing_places'].apply(func)].nunique(), df['manufacturing_places'][df['manufacturing_places'].apply(func)].count()/df['manufacturing_places'].notna().sum()
+
+
+# A l'issu de notre travail de tri sur les localisations, nous sommes passés respectivement de 1828 à 227 (-87%) et de 1741 à 343 (-80%) valeurs uniques dans les colonnes 'origins' et 'manufacturing_places', et les valeurs non manquantes de ces colonnes ne figurant pas dans la colonne 'Pays' de df_continents représenent respectivement 3,2% et ,1.4%.
+# 
+# <u>Nous trouvons ces taux acceptablement faibles pour les besoins de notre application</u>.
+# 
+# Nous définissons une dernière catégorie pour les pays en voisinage direct de la France:
+
+# In[101]:
+
+
+L_frontière = ['espagne', 'italie', 'belgique', 'luxembourg', 'allemagne', 'suisse', 'andorre', 'royaume-uni']
+
+
+# In[102]:
+
+
+# nous souhaitons associé à chaque localisation de notre jeu de donnée un continent, donc nous créons un dictionnaire assoc
+dict_pays_cont = {}
+
+for continent in df_continents['Continent'].value_counts().index:
+    dict_pays_cont[continent] = df_continents[df_continents['Continent']==continent]['Pays'].str.strip().tolist()
+
+for pays in L_frontière:
+    dict_pays_cont['europe'].remove(pays)
+    
+dict_pays_cont['voisin']=L_frontière
+
+
+# In[103]:
+
+
+# fonction pour passer des pays aux continents
+def country_to_continent(value):
+    cont = ''
+    for key in dict_pays_cont.keys():
+        contains = value in dict_pays_cont[key]
+        if contains:
+            cont = key
+            break
+        else:
+            cont = 'inconnue'
+    return cont
+
+
+# In[104]:
+
+
+df['origins'] = df['origins'].apply(country_to_continent)
+df['manufacturing_places'] = df['manufacturing_places'].apply(country_to_continent)
+
+
+# Nous n'avons désormais plus besoin de notre dataframe <b>df_continents</b>.
+
+# In[105]:
+
+
+del df_continents
+
+
+# In[106]:
 
 
 df_2 = df.copy()
@@ -763,42 +1151,44 @@ df_2 = df.copy()
 
 # #### 3. Partie 'constitution du produit'
 
-# In[ ]:
+# In[203]:
 
 
 df = df_2.copy()
 
 
-# In[ ]:
+# In[108]:
 
 
 col3 = list(df.columns[df.columns.get_loc('ingredients_text'):df.columns.get_loc('serving_size')])
 col3
 
 
-# In[ ]:
+# In[109]:
 
 
 df[col3]
 
 
-# In[ ]:
+# In[110]:
 
 
 df[col3].isna().mean()
 
 
-# In[ ]:
+# In[111]:
 
 
 df[col3].nunique()
 
 
-# A ce stade nous savons que nous allons supprimer la colonne 'allergens_fr', 'traces_tags' qui nous fournit une information similaire à celle de 'traces_fr' mais en anglais et dans une mise en forme moins lisible et 'traces' qui nous fournit une information moins synthétique que 'traces_fr' (plus de valeurs uniques pour le même taux de remplissage).
+# A ce stade nous savons que nous allons supprimer la colonne <u>'allergens_fr'</u>, <u>'traces_tags'</u> qui nous fournit une information similaire à celle de <u>'traces_fr'</u> mais en anglais et dans une mise en forme moins lisible et <u>'traces'</u> qui nous fournit une information moins synthétique que <u>'traces_fr'</u> (plus de valeurs uniques pour le même taux de remplissage).
 # 
-# Notons que les colonnes 'allergens' et 'traces_fr' contiennent le même type d'information : la présence de substances pouvant provoquer une allergie.
+# Notons que les colonnes <u>'allergens'</u> et <u>'traces_fr'</u> contiennent le même type d'information : la présence de substances pouvant provoquer une allergie.
 # 
 # - Nous combinerons donc ces 2 colonnes en espérant ainsi obtenir une information plus complète.
+# 
+# Mais avant cela, concernant la colonne <u>'ingredients_text'</u>, nous allons compter le nombre d'éléments dans la liste d'ingrédients de chaque produit dans une nouvelle colonne <u>'ingredients_n'</u> et conserver la colonne pour pouvoir la montrer aux utilisateurs finaux de notre applications.
 
 # In[ ]:
 
@@ -809,11 +1199,26 @@ df.drop(['allergens_fr','traces_tags','traces'], axis=1, inplace=True)
 # In[ ]:
 
 
+nb_ingredients = lambda x: len(str(x).split(',')) if str(x)!='nan' else 'inconnu'
+df.insert(loc=(df.columns.get_loc('ingredients_text')+1), column='ingredients_n', value=df['ingredients_text'].apply(nb_ingredients))
+
+
+# In[ ]:
+
+
+df[['ingredients_text','ingredients_n']]
+
+
+# In[113]:
+
+
 col3 = list(df.columns[df.columns.get_loc('ingredients_text'):df.columns.get_loc('serving_size')])
 df[col3].isna().mean()
 
 
-# In[ ]:
+# Nous commencçons notre travail sur les colonnes <b>traces_fr</b> et <b>allergens</b> :
+
+# In[114]:
 
 
 # pour faciliter le travail sur les chaînes de caractères, on les passe toutes en minuscule
@@ -821,27 +1226,27 @@ df['traces_fr'] = df['traces_fr'].str.lower()
 df['allergens'] = df['allergens'].str.lower()
 
 
-# In[ ]:
+# In[115]:
 
 
 L_traces = get_list_splits_str('traces_fr')
 len(L_traces)
 
 
-# In[ ]:
+# In[116]:
 
 
 L_traces
 
 
-# In[ ]:
+# In[117]:
 
 
 L_allergens = get_list_splits_str('allergens')
 len(L_allergens)
 
 
-# In[ ]:
+# In[118]:
 
 
 L_valeurs_allerg = df['traces_fr'].value_counts().index.tolist()+df['allergens'].value_counts().index.tolist()
@@ -849,20 +1254,20 @@ ens_valeurs_allerg = set(L_valeurs_allerg)
 len(ens_valeurs_allerg)
 
 
-# In[ ]:
+# In[119]:
 
 
 L_traces_uniques = get_list_uniques_splits_str('traces_fr')
 len(L_traces_uniques)
 
 
-# In[ ]:
+# In[120]:
 
 
 L_traces_uniques
 
 
-# In[ ]:
+# In[121]:
 
 
 L_traces_reduit = ['blé', 'wheat','gluten', 'orge','cereales', 'epautre', 'cereals', 'glurent', 
@@ -898,20 +1303,20 @@ L_traces_reduit = ['blé', 'wheat','gluten', 'orge','cereales', 'epautre', 'cere
 len(L_traces_reduit)
 
 
-# In[ ]:
+# In[122]:
 
 
 L_allerg_uniques = get_list_uniques_splits_str('allergens')
 len(L_allerg_uniques)
 
 
-# In[ ]:
+# In[123]:
 
 
 L_allerg_uniques
 
 
-# In[ ]:
+# In[124]:
 
 
 L_allerg_reduit = ['comté', 'milch', 'vollmilchpulver', 'butterreinfett', 'magermilchpulver', 'fromage', 'emmental', 'lctosa',
@@ -969,7 +1374,7 @@ L_allerg_reduit = ['comté', 'milch', 'vollmilchpulver', 'butterreinfett', 'mage
 len(L_allerg_reduit)
 
 
-# In[ ]:
+# In[125]:
 
 
 ens_allerg_uniques = set(L_traces_uniques)
@@ -978,7 +1383,7 @@ for element in L_allerg_uniques:
 len(ens_allerg_uniques)
 
 
-# In[ ]:
+# In[126]:
 
 
 ens_allerg_reduit = set(L_traces_reduit)
@@ -995,7 +1400,7 @@ len(ens_allerg_reduit)
 # NB : le tri des "mots-clés" des listes de modalités uniques pour obtenir les listes réduites a été réalisé à la main, et bien que l'opération ait été réalisée minutieusement, il y aura des manques que nous considérons comme étant des erreurs de perte d'information inhérentes au processus de transformation que nous avons choisi.
 # - Une autre manière de procéder aurait été de lister l'ensemble des substances les plus courantes appartenant aux 14 catégories d'allergènes qu'il est obligatoire de mentionner sur l'emballage d'un produit, et de les traduire dans toutes les langues de l'union européenne, mais cela aurait donné un tableau trop volumineux et nous n'aurions pas pu capter les mots-clés relevant de fautes d'orthographes, les variations de mots avec ou sans accent, ainsi que les mots au pluriel comme nous avons pu le faire ici.
 
-# In[ ]:
+# In[127]:
 
 
 set_gluten = set(['gluten', 'glurent', 'glutn', 'glúten'
@@ -1068,45 +1473,45 @@ dict_allerg = {'gluten': set_gluten, 'oeuf':set_oeuf, 'fruits_coque':set_fruits_
                'moutarde':set_moutarde}
 
 
-# In[ ]:
+# In[128]:
 
 
 for key in dict_allerg.keys():
     print(key)
 
 
-# In[ ]:
+# In[129]:
 
 
 len(dict_allerg.keys())
 
 
-# In[ ]:
+# In[130]:
 
 
 for substance in dict_allerg['oeuf']:
     print(substance)
 
 
-# In[ ]:
+# In[131]:
 
 
 df.insert(loc=(df.columns.get_loc('traces_fr')+1), column='substances_allergenes', value=(df['traces_fr'] + ',' + df['allergens']))
 
 
-# In[ ]:
+# In[132]:
 
 
 df['substances_allergenes'].fillna('inconnues', inplace=True)
 
 
-# In[ ]:
+# In[133]:
 
 
 df['substances_allergenes']
 
 
-# In[ ]:
+# In[134]:
 
 
 df['substances_allergenes'][253925].__contains__('lactose')
@@ -1114,7 +1519,7 @@ df['substances_allergenes'][253925].__contains__('lactose')
 
 # Nous constatons ici que nous aurions pu travailler sur la colonne issue de la jointure des colonnes 'traces_fr' et 'allergenes' car elle présente un nombre de valeurs uniques plus petit que la jointure des listes de valeurs uniques de ces mêmes colonnes (8367 contre 11788).
 
-# In[ ]:
+# In[135]:
 
 
 # nous définissons la fonction qui nous indiquera si un produit contient une substance de la catégorie passée en argument
@@ -1130,7 +1535,7 @@ def contains_allerg(cat_allerg, value):
     return n
 
 
-# In[ ]:
+# In[136]:
 
 
 def set_cols_cat_allerg():
@@ -1141,31 +1546,31 @@ def set_cols_cat_allerg():
         k+=1
 
 
-# In[ ]:
+# In[137]:
 
 
 set_cols_cat_allerg()
 
 
-# In[ ]:
+# In[138]:
 
 
 df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde']
 
 
-# In[ ]:
+# In[139]:
 
 
 df['soja'].sum()
 
 
-# In[ ]:
+# In[140]:
 
 
 df.shape
 
 
-# In[ ]:
+# In[141]:
 
 
 (df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde'].sum(axis=1) == 0).value_counts()
@@ -1174,7 +1579,7 @@ df.shape
 # Nous avons perdu l'information de présence d'allergènes pour uniquement 7 produits sur la totalité (0.06%).
 # Nous traitons ces produits réticents à la main.
 
-# In[ ]:
+# In[142]:
 
 
 df[df['substances_allergenes'] != 'inconnues'][df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde'].sum(axis=1) == 0]['substances_allergenes']
@@ -1182,7 +1587,7 @@ df[df['substances_allergenes'] != 'inconnues'][df[df['substances_allergenes'] !=
 
 # Nous ajoutons la valeur 'céleri' à notre ensemble 'set_celeri'.
 
-# In[ ]:
+# In[143]:
 
 
 set_celeri.clear()
@@ -1193,13 +1598,13 @@ dict_allerg = {'oeuf':set_oeuf, 'fruits_coque':set_fruits_coque, 'lupin':set_lup
                'moutarde':set_moutarde}
 
 
-# In[ ]:
+# In[144]:
 
 
 df['celeri'] = df['substances_allergenes'].apply(lambda value: contains_allerg('celeri', value))
 
 
-# In[ ]:
+# In[145]:
 
 
 (df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde'].sum(axis=1) == 0).value_counts()
@@ -1207,19 +1612,19 @@ df['celeri'] = df['substances_allergenes'].apply(lambda value: contains_allerg('
 
 # On retrouve notre ligne mentionnant du 'réglisse' qui n'est pas une substance allergène à mentionner obligatoirement par le fabricant. Nous n'avons désormais plus besoin des colonnes 'traces_fr' et 'allergens'.
 
-# In[ ]:
+# In[146]:
 
 
 df.drop(['traces_fr','allergens'], axis=1, inplace=True)
 
 
-# In[ ]:
+# In[147]:
 
 
 df.shape
 
 
-# In[ ]:
+# In[148]:
 
 
 df_3 = df.copy()
@@ -1227,20 +1632,26 @@ df_3 = df.copy()
 
 # #### 4. Partie 'informations diverses'
 
-# In[ ]:
+# In[149]:
+
+
+df = df_3.copy()
+
+
+# In[150]:
 
 
 col4 = list(df.columns[df.columns.get_loc('serving_size'):df.columns.get_loc('energy_100g')])
 col4
 
 
-# In[ ]:
+# In[151]:
 
 
 df[col4].isna().mean()
 
 
-# In[ ]:
+# In[152]:
 
 
 #cellule utilisée pour explorer les différentes valeurs des colonnes
@@ -1257,7 +1668,7 @@ df['no_nutriments'].value_counts()[:15]
 # 
 # Les autres colonnes sont soit vides, soit nous donnent une informations que nous n'allons pas exploiter, ou bien sont moins compréhensible ou synthétique.
 
-# In[ ]:
+# In[153]:
 
 
 col_part4_to_drop = col4
@@ -1270,20 +1681,20 @@ col_part4_to_drop.remove('image_small_url')
 df.drop(columns=col_part4_to_drop, inplace=True)
 
 
-# In[ ]:
+# In[154]:
 
 
 col4 = list(df.columns[df.columns.get_loc('additives_n'):df.columns.get_loc('energy_100g')])
 df[col4].head()
 
 
-# In[ ]:
+# In[155]:
 
 
 df[col4].isna().mean()
 
 
-# In[ ]:
+# In[156]:
 
 
 df_4 = df.copy()
@@ -1291,42 +1702,49 @@ df_4 = df.copy()
 
 # #### 5. Partie informations nutritionnelles
 
-# In[ ]:
+# In[188]:
+
+
+df = df_4.copy()
+
+
+# In[189]:
 
 
 col5 = list(df.columns[df.columns.get_loc('energy_100g'):])
 col5
 
 
-# In[ ]:
+# In[190]:
 
 
 len(col5)
 
 
-# In[ ]:
+# In[191]:
 
 
 msno.bar(df[col5], sort='descending')
 
 
-# In[ ]:
+# In[192]:
 
 
-nom_produit = 'Gnocchi'
-df.loc[df['product_name'].str.contains(nom_produit).fillna(False)]
+df[col5].isna().mean()[:50]
 
 
-# In[ ]:
+# Tout d'abord nous allons créer une colonne indiquant si un produit contient de l'alcool:
+
+# In[193]:
 
 
-df.head()
+df.insert(loc=(df.columns.get_loc('energy_100g')-1), column='alcool', value=df['alcohol_100g'].apply(lambda x: 1 if x>0.0 else 0))
 
 
-# In[ ]:
+# In[194]:
 
 
-df.iloc[53100][:15]
+df['alcool'].value_counts()
 
 
 # In[ ]:
