@@ -1,0 +1,170 @@
+﻿Niveau_danger;Id_additif;Nom_additif;Fonction_additif
+1;E102;Tartrazine;Colorants Jaune
+1;E107;Jaune 2G;Colorants Jaune
+1;E120;Cochenille;Colorants Rouge
+1;E121;Orseille orcéine;Colorants Rouge
+1;E122;Carmoisine;Colorants Rouge
+1;E125;Écarlate GN;Colorants Rouge
+1;E126;Ponceau 6R;Colorants Rouge
+1;E129;Rouge allura AC;Colorants Rouge
+1;E131;Bleu patenté V;Colorants Bleu
+1;E132;Indigotine;Colorants Bleu
+1;E133;Bleu brillant FCF;Colorants Bleu
+1;E142;Vert brillant BS;Colorants Vert
+1;E150b;Caramel sulfité;Colorants Brun
+1;E150d;Caramel au sulfite d'ammonium;Colorants Brun
+1;E151;Noir brillant BN;Colorants Noir
+1;E154;Brun FK;Colorants Brun
+1;E155;Brun chocolat HT;Colorants Brun
+1;E160b;Roccou;Colorants Orange
+1;E160bi;Extraits d'annato à base de bixine;Colorants Orange
+1;E160bii;Extraits d'annato à base de norbixine;Colorants Orange
+1;E171;Bixyde de Titane;Colorants Blanc
+1;E209;Para-Hydroxybenzoate d'hépthyle;Conservateurs
+1;E210;Acide benzoïque;Conservateurs
+1;E211;Benzoate de sodium;Conservateurs
+1;E212;Benzoate de potassium;Conservateurs
+1;E213;Benzoate de calcium;Conservateurs
+1;E214;Éthylparabène;Conservateurs
+1;E215;Éthylparabène sodique;Conservateurs
+1;E216;Propylparabène;Conservateurs
+1;E217;Propylparabène sodique;Conservateurs
+1;E218;Methylparabène;Conservateurs
+1;E219;Methylparabène sodique;Conservateurs
+1;E220;Dioxyde de soufre;Conservateurs
+1;E221;Sulfite de sodium;Conservateurs
+1;E222;Bisulfite de sodium;Acidifiants
+1;E223;Disulfite de sodium;Conservateurs
+1;E224;Disulfite de potassium;Conservateurs
+1;E225;Sulfite de potassium;Conservateurs
+1;E226;Sulfite de calcium;Conservateurs
+1;E227;Sulfite acide de calcium;Conservateurs
+1;E228;Sulfite acide de potassium;Conservateurs
+1;E239;Hexaméthyline tétramine;Conservateurs
+1;E242;Dicarbonate de diméthyle;Conservateurs
+1;E251;Salpêtre du Chili;Conservateurs
+1;E252;Nitrate de potassium;Conservateurs
+1;E284;Acide borique;Conservateurs
+1;E285;Borax;Conservateurs
+1;E321;Butylhydroxytoluène;Anti-oxydants
+1;E411;Gomme d'avoine;Acidifiants
+1;E421;Mannitol;Édulcorants
+1;E422;Glycérol;Divers
+1;E430;Stéarate de polyoxyéthylène 8;Émulsifiants
+1;E431;Polyoxyl 40 stéarate;Émulsifiants
+1;E432;Polysorbate 20;Émulsifiants
+1;E433;Polysorbate 80;Émulsifiants
+1;E434;Polysorbate 40;Émulsifiants
+1;E435;Polysorbate 60;Émulsifiants
+1;E436;Polysorbate 65;Émulsifiants
+1;E450i;Diphosphate disodique;Émulsifiants
+1;E450ii;Diphosphate trisodique;Émulsifiants
+1;E450iii;Diphosphate tétrasodique;Émulsifiants
+1;E450iv;Diphosphate dipotassique;Émulsifiants
+1;E450v;Diphosphate tétrapotassique;Émulsifiants
+1;E450vi;Diphosphate dicalcique;Émulsifiants
+1;E450vii;Pyrophosphate de calcium acide;Émulsifiants
+1;E450vii;Diphosphate biacide de calcium;Émulsifiants
+1;E451ii;Triphosphate pentapotassique;Acidifiants
+1;E452i;Sel de Graham;Émulsifiants
+1;E452i;Polyphosphate de sodium;Émulsifiants
+1;E452ii;Sel de Kurrol;Émulsifiants
+1;E452ii;Polyphosphate de potassium;Émulsifiants
+1;E452iii;Polyphosphate calco-sodique;Émulsifiants
+1;E452iii;Polyphosphate de sodium-calcium;Émulsifiants
+1;E452iv;Métaphosphate de calcium;Émulsifiants
+1;E476;Polyricinoléate de polyglycérol;Émulsifiants
+1;E513;Acide sulfurique;Acidifiants
+1;E620;Acide glutamique;Exhausteurs
+1;E621;Glutamate monosodique;Exhausteurs
+1;E622;Glutamate monopotassique;Exhausteurs
+1;E623;Diglutamate de calcium;Exhausteurs
+1;E624;Glutamate d'ammonium;Exhausteurs
+1;E625;Diglutamate de magnésium;Exhausteurs
+1;E626;Acide guanylique;Exhausteurs
+1;E627;Guanylate de Sodium;Exhausteurs
+1;E628;Guanylate de Potassium;Exhausteurs
+1;E629;Guanylate de Calcium;Exhausteurs
+1;E905d;Huile minérale, viscosité élevée;Divers
+1;E905e;Huile minérale, viscosité moyenne et faible catégorie I;Divers
+1;E905f;Huile minérale, viscosité moyenne et faible catégorie II;Divers
+1;E905g;Huile minérale, viscosité moyenne et faible catégorie III;Divers
+1;E927a;Azodicarbonamide;Divers
+1;E940;Dichlorodifluorométhane;Divers
+1;E950;Acésulfate de potassium;Édulcorants
+1;E954;Saccharine;Édulcorants
+1;E954i;Saccharine de sodium;Édulcorants
+1;E954ii;Saccharine de calcium;Édulcorants
+1;E954iii;Saccharine de potassium;Édulcorants
+1;E954iv;Saccharine de sodium;Édulcorants
+1;E962;Sel d'aspartame acésulfame;Édulcorants
+1;E1105;Lysozyme;Conservateurs
+1;E1201;Polyvinylpyrrolidone;Épaississants
+1;E1400;Dextrines, amidon torréfié;Épaississants
+1;E1401;Amidon traité aux acides;Épaississants
+1;E1402;Amidon traité aux alcalis;Épaississants
+1;E1403;Amidon blanchi;Épaississants
+1;E1404;Amidon oxydé;Épaississants
+1;E1405;Amidons traités aux enzymes;Épaississants
+1;E1410;Phosphate d'amidon;Épaississants
+1;E1411;Glycérol de diamidon;Épaississants
+1;E1412;Phosphate de diamidon;Épaississants
+1;E1413;Phosphate de diamidon phosphaté;Épaississants
+1;E1414;Phosphate de diamidon acétylé;Épaississants
+1;E1420;Amidon acétylé;Épaississants
+1;E1421;Amidon acétylé à acétate de vinyle;Épaississants
+1;E1422;Adipate de diamidon acétylé;Épaississants
+1;E1423;Glycérol de diamidon acétylé;Épaississants
+1;E1440;Amidon Hydroxypropylé;Épaississants
+1;E1442;Phosphate de diamidon hydroxypropylé;Épaississants
+1;E1443;Glycérol de diamidon hydroxypropylé;Épaississants
+1;E1450;Octényle succinate d'amidon sodique;Épaississants
+1;E1451;Amidon oxydé acétylé;Épaississants
+1;E1452;Octényl succinate d'amidon d'aluminium;Émulsifiants
+1;E1503;Huile de ricin;Divers
+1;E1519;Alcool benzylique;Divers
+1;E1520;Propylène glycol;Divers
+1;E1521;Polyéthylène-glycol;Divers
+2;E104;Jaune de quinoléine;Colorants Jaune
+2;E110;Jaune orangé S;Colorants Orange
+2;E123;Amarante;Colorants Rouge
+2;E127;Erythrosine;Colorants Rouge
+2;E152;Noir de carbone;Colorants Noir
+2;E230;Diphényle;Conservateurs
+2;E231;Orthophénylphénol;Conservateurs
+2;E232;Orthophénylphénate de sodium;Conservateurs
+2;E236;Acide formique;Conservateurs
+2;E237;Formiate de sodium;Conservateurs
+2;E238;Formiate de calcium;Conservateurs
+2;E249;Nitrite de potassium;Conservateurs
+2;E250;Nitrite de sodium;Conservateurs
+2;E310;Gallate de propyle;Anti-oxydants
+2;E319;BHQT;Conservateurs
+2;E320;Buthylhydroxyanisol;Anti-oxydants
+2;E385;Calcium-dinatrium-EDTA;Anti-oxydants
+2;E443;Huile végétale bromée;Émulsifiants
+2;E519;Sulfate de cuivre II;Divers
+2;E520;Sulfate d'aluminium;Épaississants
+2;E521;Sulfate d'aluminium sodique;Épaississants
+2;E522;Sulfate d'aluminium potassique;Acidifiants
+2;E523;Sulfate d'aluminium ammonique;Épaississants
+2;E559;Kaolin;Divers
+2;E925;Chlore;Divers
+2;E951;Aspartame;Édulcorants
+3;E103;Chrysoïne S;Colorants Jaune
+3;E111;Orange CGN;Colorants Orange
+3;E124;Ponceau 4R;Colorants Rouge
+3;E128;Rouge 2G;Colorants Rouge
+3;E173;Aluminium;Colorants Métal
+3;E952;Acide cyclamique et ses sels de Na et de Ca;Édulcorants
+3;E952i;Acide cyclamique;Édulcorants
+3;E952ii;Cyclamate de calcium;Édulcorants
+3;E952iii;Cyclamate de potassium;Édulcorants
+3;E952iv;Cyclamate de sodium;Édulcorants
+3;E143;Vert solide FCF;Colorants Vert
+3;E240;Formaldéhyde;Conservateurs
+3;E386;Ethylène-diamine-tétra-acètate disodique;Anti-oxydants
+3;E924;Bromate de potassium;Divers
+3;E924a;Bromate de potassium;Divers
+3;E924b;Bromate de calcium;Divers
+3;E926;Oxyde de chlorine;Divers
