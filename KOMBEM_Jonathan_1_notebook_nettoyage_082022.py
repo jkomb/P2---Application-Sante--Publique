@@ -813,7 +813,7 @@ df['origins'][df['origins'].str.contains('france').fillna(False)].value_counts()
 df['manufacturing_places'][df['manufacturing_places'].str.contains('france').fillna(False)].value_counts()
 
 
-# In[174]:
+# In[79]:
 
 
 # on charge un dataframe contenant les correspondances pays-continent en français dont nous avons besoin
@@ -1141,7 +1141,125 @@ df['manufacturing_places'] = df['manufacturing_places'].apply(country_to_contine
 del df_continents
 
 
+# <b>Intéressons nous maintenant à la colonne 'labels_fr'</b>
+
 # In[106]:
+
+
+df['labels_fr'] = df['labels_fr'].str.lower()
+
+
+# In[107]:
+
+
+df['labels_fr'].value_counts()[:10]
+
+
+# In[108]:
+
+
+# cellule utilisée pour analyser les différentes valeurs de labels contenant certains mots-clés
+clé1 = 'personne'
+clé2 = ''
+df['labels_fr'].loc[df['labels_fr'].str.contains(clé1).fillna(False)].loc[df['labels_fr'].str.contains(clé2).fillna(False)].value_counts()
+
+
+# Après un peu de recherche sur les différents labels, et les organismes délivrant ces labels (et le sérieux de ces organismes), nous ne retiendrons que les labels suivants : 
+# 
+# - Bio européen (ecocert, fr-bio, certipaq, certisud, agriculture biologique)
+# - Label qualité (aop, igp, stg, aoc, label rouge)
+# - Gestion durable (ressources : fsc, rainforest alliance, utz, msc ; déchêts : point vert, eco emballage)
+# - Equitable (fairtrade international, max havelaar, fsc)
+# 
+# Nous allons également catégoriser les produits selon les critères suivants :
+# 
+# - Conformité Halal
+# - Conformité Kascher
+# - Présence d'OGM
+# - Convient aux végétariens
+# - Convient aux végétaliens
+# - Teneur réduite en sel
+# - Teneur réduite en sucres
+# - Déconseillé aux femmes enceintes
+# - Déconseillé à certaines catégories de personnes
+# 
+# Nous allons donc créer un dictionnaire composé de 14 associations clé:valeurs pour ensuite créer un tableau disjonctif complet sur les catégories citées ci-avant.
+
+# In[109]:
+
+
+set_bio_euro = set(['ecocert', 'fr-bio', "agriculture biologique", "agriculture-biologique"])
+
+set_label_quali = set(['aop', 'igp', 'stg', 'aoc', "label rouge", "label-rouge"])
+
+set_gestion_dur = set(['fsc', 'rainforest', 'utz', 'msc', "point vert", "point-vert", "eco emballage", "eco-emballage"])
+
+set_equit = set(['fairtrade', 'havelaar'])
+
+set_halal = set(['halal'])
+
+set_kascher = set(['kascher', 'kosher', 'cacher'])
+
+set_ogm = set(['sans ogm', 'sans-ogm', 'non-ogm'])
+
+set_vegetariens = set(['végétarien', 'vegetar'])
+
+set_vegan = set(['vegan', 'végétalien'])
+
+set_sel_reduit = set(['sel'])
+
+set_sucres_reduit = set(['sucre'])
+
+set_femmes_enceintes = set(['enceinte'])
+
+set_personnes = set(['personne'])
+
+dict_labels = {'bio_europe':set_bio_euro,'label_qualité':set_label_quali, 'gestion_durable':set_gestion_dur, 
+               'commerce_équitable':set_equit, 'halal':set_halal, 'kascher':set_kascher, 'ogm':set_ogm, 
+               'végétariens':set_vegetariens, 'végétaliens':set_vegan, 'sel_réduit':set_sel_reduit, 
+               'sucres_réduits':set_sucres_reduit, 'femmes_enceintes':set_femmes_enceintes, 
+               'catégories_personnes':set_personnes}
+
+
+# In[112]:
+
+
+# nous définissons la fonction qui nous indiquera si un produit apaprtient à une des catégories définies ci-avant
+def belong_to_label(cat_label, value):
+    dict_cat = dict_labels[cat_label]
+    for label in dict_cat:
+        contains = str(value).__contains__(label)
+        if contains:
+            n = 1
+            break
+        else:
+            n = 0
+    return n
+
+# fonction permettant de créer les colonnes de labels
+def set_cols_labels():
+    k=1
+    func = lambda value: belong_to_label(key, value)
+    for key in dict_labels.keys():
+        if key in df.columns.tolist():
+            df.drop(key, axis=1, inplace=True)
+        df.insert(loc=(df.columns.get_loc('labels_fr')+k), column=key, value=df['labels'].apply(func)) 
+        k+=1
+
+
+# In[113]:
+
+
+set_cols_labels()
+
+
+# In[117]:
+
+
+df.loc[:,'bio_europe':'catégories_personnes']
+
+
+# In[ ]:
 
 
 df_2 = df.copy()
@@ -1152,32 +1270,32 @@ df_2 = df.copy()
 
 # #### 3. Partie 'constitution du produit'
 
-# In[107]:
+# In[ ]:
 
 
 df = df_2.copy()
 
 
-# In[108]:
+# In[ ]:
 
 
 col3 = list(df.columns[df.columns.get_loc('ingredients_text'):df.columns.get_loc('serving_size')])
 col3
 
 
-# In[109]:
+# In[ ]:
 
 
 df[col3]
 
 
-# In[110]:
+# In[ ]:
 
 
 df[col3].isna().mean()
 
 
-# In[111]:
+# In[ ]:
 
 
 df[col3].nunique()
@@ -1191,26 +1309,26 @@ df[col3].nunique()
 # 
 # Mais avant cela, concernant la colonne <u>'ingredients_text'</u>, nous allons compter le nombre d'éléments dans la liste d'ingrédients de chaque produit dans une nouvelle colonne <u>'ingredients_n'</u> et conserver la colonne pour pouvoir la montrer aux utilisateurs finaux de notre applications.
 
-# In[112]:
+# In[ ]:
 
 
 df.drop(['allergens_fr','traces_tags','traces'], axis=1, inplace=True)
 
 
-# In[113]:
+# In[ ]:
 
 
 nb_ingredients = lambda x: len(str(x).split(',')) if str(x)!='nan' else 'inconnu'
 df.insert(loc=(df.columns.get_loc('ingredients_text')+1), column='ingredients_n', value=df['ingredients_text'].apply(nb_ingredients))
 
 
-# In[114]:
+# In[ ]:
 
 
 df[['ingredients_text','ingredients_n']]
 
 
-# In[115]:
+# In[ ]:
 
 
 col3 = list(df.columns[df.columns.get_loc('ingredients_text'):df.columns.get_loc('serving_size')])
@@ -1219,7 +1337,7 @@ df[col3].isna().mean()
 
 # Nous commencçons notre travail sur les colonnes <b>traces_fr</b> et <b>allergens</b> :
 
-# In[116]:
+# In[ ]:
 
 
 # pour faciliter le travail sur les chaînes de caractères, on les passe toutes en minuscule
@@ -1227,27 +1345,27 @@ df['traces_fr'] = df['traces_fr'].str.lower()
 df['allergens'] = df['allergens'].str.lower()
 
 
-# In[117]:
+# In[ ]:
 
 
 L_traces = get_list_splits_str('traces_fr')
 len(L_traces)
 
 
-# In[118]:
+# In[ ]:
 
 
 L_traces
 
 
-# In[119]:
+# In[ ]:
 
 
 L_allergens = get_list_splits_str('allergens')
 len(L_allergens)
 
 
-# In[120]:
+# In[ ]:
 
 
 L_valeurs_allerg = df['traces_fr'].value_counts().index.tolist()+df['allergens'].value_counts().index.tolist()
@@ -1255,20 +1373,20 @@ ens_valeurs_allerg = set(L_valeurs_allerg)
 len(ens_valeurs_allerg)
 
 
-# In[121]:
+# In[ ]:
 
 
 L_traces_uniques = get_list_uniques_splits_str('traces_fr')
 len(L_traces_uniques)
 
 
-# In[122]:
+# In[ ]:
 
 
 L_traces_uniques
 
 
-# In[123]:
+# In[ ]:
 
 
 L_traces_reduit = ['blé', 'wheat','gluten', 'orge','cereales', 'epautre', 'cereals', 'glurent', 
@@ -1304,20 +1422,20 @@ L_traces_reduit = ['blé', 'wheat','gluten', 'orge','cereales', 'epautre', 'cere
 len(L_traces_reduit)
 
 
-# In[124]:
+# In[ ]:
 
 
 L_allerg_uniques = get_list_uniques_splits_str('allergens')
 len(L_allerg_uniques)
 
 
-# In[125]:
+# In[ ]:
 
 
 L_allerg_uniques
 
 
-# In[126]:
+# In[ ]:
 
 
 L_allerg_reduit = ['comté', 'milch', 'vollmilchpulver', 'butterreinfett', 'magermilchpulver', 'fromage', 'emmental', 'lctosa',
@@ -1375,7 +1493,7 @@ L_allerg_reduit = ['comté', 'milch', 'vollmilchpulver', 'butterreinfett', 'mage
 len(L_allerg_reduit)
 
 
-# In[127]:
+# In[ ]:
 
 
 ens_allerg_uniques = set(L_traces_uniques)
@@ -1384,7 +1502,7 @@ for element in L_allerg_uniques:
 len(ens_allerg_uniques)
 
 
-# In[128]:
+# In[ ]:
 
 
 ens_allerg_reduit = set(L_traces_reduit)
@@ -1401,7 +1519,7 @@ len(ens_allerg_reduit)
 # NB : le tri des "mots-clés" des listes de modalités uniques pour obtenir les listes réduites a été réalisé à la main, et bien que l'opération ait été réalisée minutieusement, il y aura des manques que nous considérons comme étant des erreurs de perte d'information inhérentes au processus de transformation que nous avons choisi.
 # - Une autre manière de procéder aurait été de lister l'ensemble des substances les plus courantes appartenant aux 14 catégories d'allergènes qu'il est obligatoire de mentionner sur l'emballage d'un produit, et de les traduire dans toutes les langues de l'union européenne, mais cela aurait donné un tableau trop volumineux et nous n'aurions pas pu capter les mots-clés relevant de fautes d'orthographes, les variations de mots avec ou sans accent, ainsi que les mots au pluriel comme nous avons pu le faire ici.
 
-# In[129]:
+# In[ ]:
 
 
 set_gluten = set(['gluten', 'glurent', 'glutn', 'glúten'
@@ -1474,52 +1592,52 @@ dict_allerg = {'gluten': set_gluten, 'oeuf':set_oeuf, 'fruits_coque':set_fruits_
                'moutarde':set_moutarde}
 
 
-# In[130]:
+# In[ ]:
 
 
 for key in dict_allerg.keys():
     print(key)
 
 
-# In[131]:
+# In[ ]:
 
 
 len(dict_allerg.keys())
 
 
-# In[132]:
+# In[ ]:
 
 
 for substance in dict_allerg['oeuf']:
     print(substance)
 
 
-# In[133]:
+# In[ ]:
 
 
 df.insert(loc=(df.columns.get_loc('traces_fr')+1), column='substances_allergenes', value=(df['traces_fr'] + ',' + df['allergens']))
 
 
-# In[134]:
+# In[ ]:
 
 
 df['substances_allergenes'].fillna('inconnues', inplace=True)
 
 
-# In[135]:
+# In[ ]:
 
 
 df['substances_allergenes']
 
 
-# In[136]:
+# In[114]:
 
 
 # nous définissons la fonction qui nous indiquera si un produit contient une substance de la catégorie passée en argument
 def contains_allerg(cat_allerg, value):
     dict_cat = dict_allerg[cat_allerg]
     for substance in dict_cat:
-        contains = value.__contains__(substance)
+        contains = str(value).__contains__(substance)
         if contains:
             n = 1
             break
@@ -1527,43 +1645,42 @@ def contains_allerg(cat_allerg, value):
             n = 0
     return n
 
-
-# In[137]:
-
-
+# fonction permettant de créer les colonnes de catégories d'allergènes
 def set_cols_cat_allerg():
     k=1
     func = lambda value: contains_allerg(key, value)
     for key in dict_allerg.keys():
+        if key in df.columns.tolist():
+            df.drop(key, axis=1, inplace=True)
         df.insert(loc=(df.columns.get_loc('traces_fr')+k), column=key, value=df['substances_allergenes'].apply(func)) 
         k+=1
 
 
-# In[138]:
+# In[ ]:
 
 
 set_cols_cat_allerg()
 
 
-# In[139]:
+# In[ ]:
 
 
 df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde']
 
 
-# In[140]:
+# In[ ]:
 
 
 df['soja'].sum()
 
 
-# In[141]:
+# In[ ]:
 
 
 df.shape
 
 
-# In[142]:
+# In[ ]:
 
 
 (df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde'].sum(axis=1) == 0).value_counts()
@@ -1572,7 +1689,7 @@ df.shape
 # Nous avons perdu l'information de présence d'allergènes pour uniquement 7 produits sur la totalité (0.06%).
 # Nous traitons ces produits réticents à la main.
 
-# In[143]:
+# In[ ]:
 
 
 df[df['substances_allergenes'] != 'inconnues'][df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde'].sum(axis=1) == 0]['substances_allergenes']
@@ -1580,7 +1697,7 @@ df[df['substances_allergenes'] != 'inconnues'][df[df['substances_allergenes'] !=
 
 # Nous ajoutons la valeur 'céleri' à notre ensemble 'set_celeri'.
 
-# In[144]:
+# In[ ]:
 
 
 set_celeri.clear()
@@ -1591,13 +1708,13 @@ dict_allerg = {'oeuf':set_oeuf, 'fruits_coque':set_fruits_coque, 'lupin':set_lup
                'moutarde':set_moutarde}
 
 
-# In[145]:
+# In[ ]:
 
 
 df['celeri'] = df['substances_allergenes'].apply(lambda value: contains_allerg('celeri', value))
 
 
-# In[146]:
+# In[ ]:
 
 
 (df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde'].sum(axis=1) == 0).value_counts()
@@ -1605,19 +1722,19 @@ df['celeri'] = df['substances_allergenes'].apply(lambda value: contains_allerg('
 
 # On retrouve notre ligne mentionnant du 'réglisse' qui n'est pas une substance allergène à mentionner obligatoirement par le fabricant. Nous n'avons désormais plus besoin des colonnes 'traces_fr' et 'allergens'.
 
-# In[147]:
+# In[ ]:
 
 
 df.drop(['traces_fr','allergens'], axis=1, inplace=True)
 
 
-# In[148]:
+# In[ ]:
 
 
 df.shape
 
 
-# In[149]:
+# In[ ]:
 
 
 df_3 = df.copy()
@@ -1625,26 +1742,26 @@ df_3 = df.copy()
 
 # #### 4. Partie 'informations diverses'
 
-# In[150]:
+# In[ ]:
 
 
 df = df_3.copy()
 
 
-# In[151]:
+# In[ ]:
 
 
 col4 = list(df.columns[df.columns.get_loc('serving_size'):df.columns.get_loc('energy_100g')])
 col4
 
 
-# In[152]:
+# In[ ]:
 
 
 df[col4].isna().mean()
 
 
-# In[153]:
+# In[ ]:
 
 
 #cellule utilisée pour explorer les différentes valeurs des colonnes
@@ -1661,7 +1778,7 @@ df['no_nutriments'].value_counts()[:15]
 # 
 # Les autres colonnes sont soit vides, soit nous donnent une informations que nous n'allons pas exploiter, ou bien sont moins compréhensible ou synthétique.
 
-# In[154]:
+# In[ ]:
 
 
 col_part4_to_drop = col4
@@ -1674,14 +1791,14 @@ col_part4_to_drop.remove('image_small_url')
 df.drop(columns=col_part4_to_drop, inplace=True)
 
 
-# In[155]:
+# In[ ]:
 
 
 col4 = list(df.columns[df.columns.get_loc('additives_n'):df.columns.get_loc('energy_100g')])
 df[col4].head()
 
 
-# In[156]:
+# In[ ]:
 
 
 df[col4].isna().mean()
@@ -1691,7 +1808,7 @@ df[col4].isna().mean()
 # 
 # Nous importons un jeu de données informatif de la dangerosité des additifs alimentaires : ici ne sont présents que les additifs avec un niveau de dangerosité pour la santé suffisant pour que la question du bien fondé de la consommation régulière du produit se pose. Tous les additifs absents de cette liste auront un niveau de dangerosité égal à 0, tandis que les additifs de ce jeu de donnée auront un niveau de dangerosité allant de 1 à 3.
 
-# In[172]:
+# In[ ]:
 
 
 df_additifs = pd.read_csv("extradatas\\additifs_dangereux.csv", delimiter=';', on_bad_lines='skip')
@@ -1700,26 +1817,26 @@ df_additifs
 
 # A ce stade nous voulons récupérer la liste des codes des additifs contenus dans chaque produit pour facilement faire la correspondance avec notre jeu de données sur la dangerosité des additifs.
 
-# In[158]:
+# In[ ]:
 
 
 df['additives_fr'].value_counts()[:10]
 
 
-# In[159]:
+# In[ ]:
 
 
 selector = lambda x: [str(element).split(' -')[0] for element in x]
 df.insert(loc=(df.columns.get_loc('additives_fr')+1), column='codes_additifs', value=df['additives_fr'].fillna('inconnus').str.split(',').apply(selector))
 
 
-# In[160]:
+# In[ ]:
 
 
 df['codes_additifs']
 
 
-# In[166]:
+# In[ ]:
 
 
 def highest_danger_level(value):
@@ -1736,25 +1853,33 @@ def highest_danger_level(value):
     return danger
 
 
-# In[162]:
+# In[ ]:
 
 
 highest_danger_level(df['codes_additifs'][190582])
 
 
-# In[163]:
+# In[ ]:
 
 
 df.insert(loc=(df.columns.get_loc('codes_additifs')+1), column='additif_niveau_danger', value=df['codes_additifs'].apply(highest_danger_level))
 
 
-# In[165]:
+# In[ ]:
 
 
 df['additif_niveau_danger'].value_counts()
 
 
 # Nous sommes rassurés par la présence d'additifs de dangerosité de plus bas niveau uniquement.
+# 
+# Nous n'avons désormais plus besoin de notre dataframe <b>df_additifs</b>.
+
+# In[ ]:
+
+
+del df_additifs
+
 
 # In[ ]:
 
