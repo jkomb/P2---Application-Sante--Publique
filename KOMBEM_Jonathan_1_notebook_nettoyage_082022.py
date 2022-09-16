@@ -155,7 +155,7 @@ df.isna().mean()[df.isna().mean() > 0.90]
 # - Plus de 60% des colonnes présentent un taux de valeurs manquantes supérieur à <b>90%</b> (100 colonnes)
 # - Plus de 2/3 des lignes (71%) présentent un taux de valeurs manquantes supérieur à <b>75%</b>, mode de la distribution des taux de valeurs manquantes des lignes (229030 lignes)
 
-# ### Sélection des variables utiles
+# ## Sélection des variables utiles
 # 
 # Pour la suite de notre étude du jeu de données, nous allons, partie par partie décortiquer les variables que nous allons garder, et selon ces colonnes, les individus dont nous allons nous séparer.
 # 
@@ -452,13 +452,17 @@ n - len(L_carton)-len(L_metal)-len(L_verre)
 
 def belong_pack_catg(pack_cat, value):
     dict_cat = dict_pack[pack_cat]
-    for pack in dict_cat:
-        contains = str(value).__contains__(pack)
-        if contains:
-            n = 1
-            break
-        else:
-            n = 0
+    if type(value) == float:
+        if np.isnan(value):
+            n = np.nan
+    else:
+        for pack in dict_cat:
+            contains = str(value).__contains__(pack)
+            if contains:
+                n = 1
+                break
+            else:
+                n = 0
     return n
 
 # nous définissons ensuite la fonction qui va créer le tableau injonctif des catégories d'emballage
@@ -680,11 +684,11 @@ def list_synth_value(value, n_synth_max, list_cat_to_del=list_cat_to_del):
     for i in range(n_synth_max):
         if i < n:
             if split_value[i] == 'nan':
-                list_synth.append('x')
+                list_synth.append(np.nan)
             else:
                 list_synth.append(split_value[i])
         else:
-            list_synth.append('x')
+            list_synth.append(np.nan)
     return list_synth
 
 
@@ -723,7 +727,7 @@ set_cols_categ_synth(3)
 # In[66]:
 
 
-df[df['categories_fr'].notna()].iloc[:, df.columns.get_loc('categories_fr'):df.columns.get_loc('categories_fr')+4]
+df[df['categories_fr'].notna()].iloc[:, df.columns.get_loc('categories_fr'):df.columns.get_loc('categories_synth3')]
 
 
 # Créons maintenant les colonnes nous permettant de savoir si un produit contient de la viande (pour les végétariens, végétaliens, et flexitariens) et du porc (pour ceux qui n'en consomment pas quelque soit la raison).
@@ -731,8 +735,8 @@ df[df['categories_fr'].notna()].iloc[:, df.columns.get_loc('categories_fr'):df.c
 # In[67]:
 
 
-df.insert(loc=(df.columns.get_loc('categories_synth3')+1), column='viande', value=df['categories_fr'].apply(lambda x: 1 if str(x).__contains__('viande') else 0))
-df.insert(loc=(df.columns.get_loc('categories_synth3')+2), column='porc', value=df['categories_fr'].apply(lambda x: 1 if str(x).__contains__('porc') else 0))
+df.insert(loc=(df.columns.get_loc('categories_synth3')+1), column='viande', value=df['categories_fr'].apply(lambda x: 1 if str(x).__contains__('viande') else (0 if str(x) != 'nan' else np.nan) ))
+df.insert(loc=(df.columns.get_loc('categories_synth3')+2), column='porc', value=df['categories_fr'].apply(lambda x: 1 if str(x).__contains__('porc') else (0 if str(x) != 'nan' else np.nan) ))
 
 
 # In[68]:
@@ -783,16 +787,22 @@ df['manufacturing_places'] = df['manufacturing_places'].str.lower()
 # In[74]:
 
 
-df['origins'].value_counts()
+df['origins'].isna().mean(), df['manufacturing_places'].isna().mean()
 
 
 # In[75]:
 
 
-df['manufacturing_places'].value_counts()
+df['origins'].value_counts()
 
 
 # In[76]:
+
+
+df['manufacturing_places'].value_counts()
+
+
+# In[77]:
 
 
 # on regroupe toutes les localisations contenant 'france' dans 'france' pour dégrossir 
@@ -801,19 +811,19 @@ df['origins'] = df['origins'].apply(func)
 df['manufacturing_places'] = df['manufacturing_places'].apply(func)
 
 
-# In[77]:
+# In[78]:
 
 
 df['origins'][df['origins'].str.contains('france').fillna(False)].value_counts()
 
 
-# In[78]:
+# In[79]:
 
 
 df['manufacturing_places'][df['manufacturing_places'].str.contains('france').fillna(False)].value_counts()
 
 
-# In[79]:
+# In[80]:
 
 
 # on charge un dataframe contenant les correspondances pays-continent en français dont nous avons besoin
@@ -821,20 +831,20 @@ df_continents = pd.read_csv('extradatas\\Liste_pays_continents.csv', delimiter='
 df_continents.head()
 
 
-# In[80]:
+# In[81]:
 
 
 df_continents.iloc[:,0] = df_continents.iloc[:,0].str.lower()
 df_continents.iloc[:,1] = df_continents.iloc[:,1].str.lower()
 
 
-# In[81]:
+# In[82]:
 
 
 df_continents['Continent'].value_counts()
 
 
-# In[82]:
+# In[83]:
 
 
 # on ne souhaite que 5 continents principaux, donc on regroupe les amériques, et on renomme la colonne 'Nom français'
@@ -843,7 +853,7 @@ df_continents['Continent'] = df_continents['Continent'].apply(lambda x: 'amériq
 df_continents = df_continents.rename(columns={'Nom français':'Pays'})
 
 
-# In[83]:
+# In[84]:
 
 
 # on crée la liste L_pays pour faciliter l'exploration des pays, plus simple avec une liste qu'un objet Series
@@ -851,7 +861,7 @@ L_pays = [element for element in df_continents['Pays']]
 L_pays
 
 
-# In[84]:
+# In[85]:
 
 
 # on simplifie les noms de pays dans notre dataframe pays-continent pour faciliter la correspondance avec notre jeu de données
@@ -859,7 +869,7 @@ func = lambda x : x.split('(')[0].strip()
 df_continents['Pays'] = df_continents['Pays'].apply(func)
 
 
-# In[85]:
+# In[86]:
 
 
 L_pays = [x.split('(')[0].strip() for x in L_pays]
@@ -868,13 +878,19 @@ L_pays
 
 # A ce stade, pour accélérer notre travail, nous allons remplacer chaque localisation dans nos colonnes 'origins' et 'manufacturing_places' par le pays qu'elle contient, et qui fait partie de la colonne 'Pays' de notre dataframe df_continent car alors on pourra lui associer un continent :
 
-# In[86]:
+# In[87]:
 
 
 df_continents['Pays'][:20]
 
 
-# In[87]:
+# In[88]:
+
+
+df['origins'].isna().mean()
+
+
+# In[89]:
 
 
 # nous définissons la fonction qui nous donnera le pays présent dans une localisation, s'il fait partie du dataframe
@@ -892,14 +908,14 @@ def belong_to_country(value):
     return country
 
 
-# In[88]:
+# In[90]:
 
 
 df['origins'] = df['origins'].apply(belong_to_country)
 df['origins'].value_counts()
 
 
-# In[89]:
+# In[91]:
 
 
 df['manufacturing_places'] = df['manufacturing_places'].apply(belong_to_country)
@@ -908,7 +924,7 @@ df['manufacturing_places'].value_counts()
 
 # A ce stade, nous sommes respectivement passés de 1828 à 1153 (-37%) et de 1741 à 1002 (-43%) valeurs uniques de localisation dans nos colonnes 'origins' et 'manufacturing_places', avec un plus grand nombre de valeur en conformité avec notre dataframe <b>df_continents</b>.
 
-# In[90]:
+# In[92]:
 
 
 func = lambda x: False if x in df_continents['Pays'].tolist() else True
@@ -923,14 +939,14 @@ df['origins'][df['origins'].apply(func)].value_counts()
 # 
 # Nous créons donc un dictionnaire de mise en forme des valeurs des colonnes 'origins' et 'manufacturing_places' vers la forme présente dans la colonne 'Pays' de df_continents, et un dictionnaire pour simplifier cette dernière colonne :
 
-# In[91]:
+# In[93]:
 
 
 func = lambda x: False if x in df_continents['Pays'].tolist() else True
 df['manufacturing_places'][df['manufacturing_places'].apply(func)].value_counts()
 
 
-# In[92]:
+# In[94]:
 
 
 dict_pays_regroup_df = {'belg':'belgique', 'spa':'espagne','basque':'espagne','pays':'pays-bas', 'ital':'italie', 
@@ -1019,7 +1035,7 @@ dict_pays_df_cont = {'taïwan':'taïwan', 'royaume-uni':'royaume-uni','tchéquie
 len(dict_pays_regroup_df), len(dict_pays_df_cont)
 
 
-# In[93]:
+# In[95]:
 
 
 # cellule utilisée pour analyser les différentes localisation contenant un certain mot-clé
@@ -1027,7 +1043,7 @@ clé = 'россия'
 df['manufacturing_places'][df['manufacturing_places'].str.contains(clé).fillna(False)].value_counts()
 
 
-# In[94]:
+# In[96]:
 
 
 # cellule utilisée pour naviguer entre les différents pays pour vérifier leur orthographe, ou leur simple présence
@@ -1035,7 +1051,7 @@ df['manufacturing_places'][df['manufacturing_places'].str.contains(clé).fillna(
 L_pays
 
 
-# In[95]:
+# In[97]:
 
 
 # fonction pour modifier les localisations selon le dictionnaire passé en argument
@@ -1051,32 +1067,32 @@ def replace_countries(dict_country, value):
     return country
 
 
-# In[96]:
+# In[98]:
 
 
 df_continents['Pays'] = df_continents['Pays'].apply(lambda x: replace_countries(dict_pays_df_cont, x))
 
 
-# In[97]:
+# In[99]:
 
 
 df['origins'] = df['origins'].apply(lambda x: replace_countries(dict_pays_regroup_df, x))
 
 
-# In[98]:
+# In[100]:
 
 
 df['manufacturing_places'] = df['manufacturing_places'].apply(lambda x: replace_countries(dict_pays_regroup_df, x))
 
 
-# In[99]:
+# In[101]:
 
 
 func = lambda x: False if x in df_continents['Pays'].tolist() else True
 df['origins'][df['origins'].apply(func)].nunique(), df['origins'][df['origins'].apply(func)].count()/df['origins'].notna().sum()
 
 
-# In[100]:
+# In[102]:
 
 
 func = lambda x: False if x in df_continents['Pays'].tolist() else True
@@ -1089,13 +1105,13 @@ df['manufacturing_places'][df['manufacturing_places'].apply(func)].nunique(), df
 # 
 # Nous définissons une dernière catégorie pour les pays en voisinage direct de la France:
 
-# In[101]:
+# In[103]:
 
 
 L_frontière = ['espagne', 'italie', 'belgique', 'luxembourg', 'allemagne', 'suisse', 'andorre', 'royaume-uni']
 
 
-# In[102]:
+# In[104]:
 
 
 # nous souhaitons associé à chaque localisation de notre jeu de donnée un continent, donc nous créons un dictionnaire assoc
@@ -1110,23 +1126,27 @@ for pays in L_frontière:
 dict_pays_cont['voisin']=L_frontière
 
 
-# In[103]:
+# In[105]:
 
 
 # fonction pour passer des pays aux continents
 def country_to_continent(value):
     cont = ''
-    for key in dict_pays_cont.keys():
-        contains = value in dict_pays_cont[key]
-        if contains:
-            cont = key
-            break
-        else:
-            cont = 'inconnue'
+    if type(value) == float:
+        if np.isnan(value):
+            cont = np.nan
+    else:
+        for key in dict_pays_cont.keys():
+            contains = value in dict_pays_cont[key]
+            if contains:
+                cont = key
+                break
+            else:
+                cont = 'inconnue'
     return cont
 
 
-# In[104]:
+# In[106]:
 
 
 df['origins'] = df['origins'].apply(country_to_continent)
@@ -1135,7 +1155,7 @@ df['manufacturing_places'] = df['manufacturing_places'].apply(country_to_contine
 
 # Nous n'avons désormais plus besoin de notre dataframe <b>df_continents</b>.
 
-# In[105]:
+# In[107]:
 
 
 del df_continents
@@ -1143,19 +1163,19 @@ del df_continents
 
 # <b>Intéressons nous maintenant à la colonne 'labels_fr'</b>
 
-# In[106]:
+# In[108]:
 
 
 df['labels_fr'] = df['labels_fr'].str.lower()
 
 
-# In[107]:
+# In[109]:
 
 
 df['labels_fr'].value_counts()[:10]
 
 
-# In[108]:
+# In[110]:
 
 
 # cellule utilisée pour analyser les différentes valeurs de labels contenant certains mots-clés
@@ -1185,7 +1205,7 @@ df['labels_fr'].loc[df['labels_fr'].str.contains(clé1).fillna(False)].loc[df['l
 # 
 # Nous allons donc créer un dictionnaire composé de 14 associations clé:valeurs pour ensuite créer un tableau disjonctif complet sur les catégories citées ci-avant.
 
-# In[109]:
+# In[111]:
 
 
 set_bio_euro = set(['ecocert', 'fr-bio', "agriculture biologique", "agriculture-biologique"])
@@ -1227,13 +1247,17 @@ dict_labels = {'bio_europe':set_bio_euro,'label_qualité':set_label_quali, 'gest
 # nous définissons la fonction qui nous indiquera si un produit apaprtient à une des catégories définies ci-avant
 def belong_to_label(cat_label, value):
     dict_cat = dict_labels[cat_label]
-    for label in dict_cat:
-        contains = str(value).__contains__(label)
-        if contains:
-            n = 1
-            break
-        else:
-            n = 0
+    if type(value) == float:
+        if np.isnan(value):
+            n = np.nan
+    else:
+        for label in dict_cat:
+            contains = str(value).__contains__(label)
+            if contains:
+                n = 1
+                break
+            else:
+                n = 0
     return n
 
 # fonction permettant de créer les colonnes de labels
@@ -1253,13 +1277,13 @@ def set_cols_labels():
 set_cols_labels()
 
 
-# In[117]:
+# In[114]:
 
 
 df.loc[:,'bio_europe':'catégories_personnes']
 
 
-# In[ ]:
+# In[115]:
 
 
 df_2 = df.copy()
@@ -1270,32 +1294,32 @@ df_2 = df.copy()
 
 # #### 3. Partie 'constitution du produit'
 
-# In[ ]:
+# In[116]:
 
 
 df = df_2.copy()
 
 
-# In[ ]:
+# In[117]:
 
 
 col3 = list(df.columns[df.columns.get_loc('ingredients_text'):df.columns.get_loc('serving_size')])
 col3
 
 
-# In[ ]:
+# In[118]:
 
 
 df[col3]
 
 
-# In[ ]:
+# In[119]:
 
 
 df[col3].isna().mean()
 
 
-# In[ ]:
+# In[120]:
 
 
 df[col3].nunique()
@@ -1309,26 +1333,26 @@ df[col3].nunique()
 # 
 # Mais avant cela, concernant la colonne <u>'ingredients_text'</u>, nous allons compter le nombre d'éléments dans la liste d'ingrédients de chaque produit dans une nouvelle colonne <u>'ingredients_n'</u> et conserver la colonne pour pouvoir la montrer aux utilisateurs finaux de notre applications.
 
-# In[ ]:
+# In[121]:
 
 
 df.drop(['allergens_fr','traces_tags','traces'], axis=1, inplace=True)
 
 
-# In[ ]:
+# In[122]:
 
 
-nb_ingredients = lambda x: len(str(x).split(',')) if str(x)!='nan' else 'inconnu'
+nb_ingredients = lambda x: len(str(x).split(',')) if (str(x)!='nan') else np.nan
 df.insert(loc=(df.columns.get_loc('ingredients_text')+1), column='ingredients_n', value=df['ingredients_text'].apply(nb_ingredients))
 
 
-# In[ ]:
+# In[123]:
 
 
 df[['ingredients_text','ingredients_n']]
 
 
-# In[ ]:
+# In[124]:
 
 
 col3 = list(df.columns[df.columns.get_loc('ingredients_text'):df.columns.get_loc('serving_size')])
@@ -1337,7 +1361,7 @@ df[col3].isna().mean()
 
 # Nous commencçons notre travail sur les colonnes <b>traces_fr</b> et <b>allergens</b> :
 
-# In[ ]:
+# In[125]:
 
 
 # pour faciliter le travail sur les chaînes de caractères, on les passe toutes en minuscule
@@ -1345,27 +1369,27 @@ df['traces_fr'] = df['traces_fr'].str.lower()
 df['allergens'] = df['allergens'].str.lower()
 
 
-# In[ ]:
+# In[126]:
 
 
 L_traces = get_list_splits_str('traces_fr')
 len(L_traces)
 
 
-# In[ ]:
+# In[127]:
 
 
 L_traces
 
 
-# In[ ]:
+# In[128]:
 
 
 L_allergens = get_list_splits_str('allergens')
 len(L_allergens)
 
 
-# In[ ]:
+# In[129]:
 
 
 L_valeurs_allerg = df['traces_fr'].value_counts().index.tolist()+df['allergens'].value_counts().index.tolist()
@@ -1373,20 +1397,20 @@ ens_valeurs_allerg = set(L_valeurs_allerg)
 len(ens_valeurs_allerg)
 
 
-# In[ ]:
+# In[130]:
 
 
 L_traces_uniques = get_list_uniques_splits_str('traces_fr')
 len(L_traces_uniques)
 
 
-# In[ ]:
+# In[131]:
 
 
 L_traces_uniques
 
 
-# In[ ]:
+# In[132]:
 
 
 L_traces_reduit = ['blé', 'wheat','gluten', 'orge','cereales', 'epautre', 'cereals', 'glurent', 
@@ -1422,20 +1446,20 @@ L_traces_reduit = ['blé', 'wheat','gluten', 'orge','cereales', 'epautre', 'cere
 len(L_traces_reduit)
 
 
-# In[ ]:
+# In[133]:
 
 
 L_allerg_uniques = get_list_uniques_splits_str('allergens')
 len(L_allerg_uniques)
 
 
-# In[ ]:
+# In[134]:
 
 
 L_allerg_uniques
 
 
-# In[ ]:
+# In[135]:
 
 
 L_allerg_reduit = ['comté', 'milch', 'vollmilchpulver', 'butterreinfett', 'magermilchpulver', 'fromage', 'emmental', 'lctosa',
@@ -1493,7 +1517,7 @@ L_allerg_reduit = ['comté', 'milch', 'vollmilchpulver', 'butterreinfett', 'mage
 len(L_allerg_reduit)
 
 
-# In[ ]:
+# In[136]:
 
 
 ens_allerg_uniques = set(L_traces_uniques)
@@ -1502,7 +1526,7 @@ for element in L_allerg_uniques:
 len(ens_allerg_uniques)
 
 
-# In[ ]:
+# In[137]:
 
 
 ens_allerg_reduit = set(L_traces_reduit)
@@ -1519,7 +1543,7 @@ len(ens_allerg_reduit)
 # NB : le tri des "mots-clés" des listes de modalités uniques pour obtenir les listes réduites a été réalisé à la main, et bien que l'opération ait été réalisée minutieusement, il y aura des manques que nous considérons comme étant des erreurs de perte d'information inhérentes au processus de transformation que nous avons choisi.
 # - Une autre manière de procéder aurait été de lister l'ensemble des substances les plus courantes appartenant aux 14 catégories d'allergènes qu'il est obligatoire de mentionner sur l'emballage d'un produit, et de les traduire dans toutes les langues de l'union européenne, mais cela aurait donné un tableau trop volumineux et nous n'aurions pas pu capter les mots-clés relevant de fautes d'orthographes, les variations de mots avec ou sans accent, ainsi que les mots au pluriel comme nous avons pu le faire ici.
 
-# In[ ]:
+# In[138]:
 
 
 set_gluten = set(['gluten', 'glurent', 'glutn', 'glúten'
@@ -1592,57 +1616,55 @@ dict_allerg = {'gluten': set_gluten, 'oeuf':set_oeuf, 'fruits_coque':set_fruits_
                'moutarde':set_moutarde}
 
 
-# In[ ]:
+# In[139]:
 
 
 for key in dict_allerg.keys():
     print(key)
 
 
-# In[ ]:
+# In[140]:
 
 
 len(dict_allerg.keys())
 
 
-# In[ ]:
+# In[141]:
 
 
 for substance in dict_allerg['oeuf']:
     print(substance)
 
 
-# In[ ]:
+# In[142]:
 
 
 df.insert(loc=(df.columns.get_loc('traces_fr')+1), column='substances_allergenes', value=(df['traces_fr'] + ',' + df['allergens']))
 
 
-# In[ ]:
-
-
-df['substances_allergenes'].fillna('inconnues', inplace=True)
-
-
-# In[ ]:
+# In[143]:
 
 
 df['substances_allergenes']
 
 
-# In[114]:
+# In[144]:
 
 
 # nous définissons la fonction qui nous indiquera si un produit contient une substance de la catégorie passée en argument
 def contains_allerg(cat_allerg, value):
     dict_cat = dict_allerg[cat_allerg]
-    for substance in dict_cat:
-        contains = str(value).__contains__(substance)
-        if contains:
-            n = 1
-            break
-        else:
-            n = 0
+    if type(value) == float:
+        if np.isnan(value):
+            n = np.nan
+    else:
+        for substance in dict_cat:
+            contains = str(value).__contains__(substance)
+            if contains:
+                n = 1
+                break
+            else:
+                n = 0
     return n
 
 # fonction permettant de créer les colonnes de catégories d'allergènes
@@ -1656,48 +1678,42 @@ def set_cols_cat_allerg():
         k+=1
 
 
-# In[ ]:
+# In[145]:
 
 
 set_cols_cat_allerg()
 
 
-# In[ ]:
+# In[146]:
 
 
 df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde']
 
 
-# In[ ]:
-
-
-df['soja'].sum()
-
-
-# In[ ]:
+# In[147]:
 
 
 df.shape
 
 
-# In[ ]:
+# In[148]:
 
 
-(df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde'].sum(axis=1) == 0).value_counts()
+(df[df['substances_allergenes'].notna()].loc[:,'oeuf':'moutarde'].sum(axis=1) == 0).value_counts()
 
 
 # Nous avons perdu l'information de présence d'allergènes pour uniquement 7 produits sur la totalité (0.06%).
 # Nous traitons ces produits réticents à la main.
 
-# In[ ]:
+# In[149]:
 
 
-df[df['substances_allergenes'] != 'inconnues'][df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde'].sum(axis=1) == 0]['substances_allergenes']
+df[df['substances_allergenes'].notna()][df[df['substances_allergenes'].notna()].loc[:,'oeuf':'moutarde'].sum(axis=1) == 0]['substances_allergenes']
 
 
 # Nous ajoutons la valeur 'céleri' à notre ensemble 'set_celeri'.
 
-# In[ ]:
+# In[150]:
 
 
 set_celeri.clear()
@@ -1708,13 +1724,13 @@ dict_allerg = {'oeuf':set_oeuf, 'fruits_coque':set_fruits_coque, 'lupin':set_lup
                'moutarde':set_moutarde}
 
 
-# In[ ]:
+# In[151]:
 
 
 df['celeri'] = df['substances_allergenes'].apply(lambda value: contains_allerg('celeri', value))
 
 
-# In[ ]:
+# In[152]:
 
 
 (df[df['substances_allergenes'] != 'inconnues'].loc[:,'oeuf':'moutarde'].sum(axis=1) == 0).value_counts()
@@ -1722,19 +1738,19 @@ df['celeri'] = df['substances_allergenes'].apply(lambda value: contains_allerg('
 
 # On retrouve notre ligne mentionnant du 'réglisse' qui n'est pas une substance allergène à mentionner obligatoirement par le fabricant. Nous n'avons désormais plus besoin des colonnes 'traces_fr' et 'allergens'.
 
-# In[ ]:
+# In[153]:
 
 
 df.drop(['traces_fr','allergens'], axis=1, inplace=True)
 
 
-# In[ ]:
+# In[154]:
 
 
 df.shape
 
 
-# In[ ]:
+# In[155]:
 
 
 df_3 = df.copy()
@@ -1742,30 +1758,30 @@ df_3 = df.copy()
 
 # #### 4. Partie 'informations diverses'
 
-# In[ ]:
+# In[156]:
 
 
 df = df_3.copy()
 
 
-# In[ ]:
+# In[157]:
 
 
 col4 = list(df.columns[df.columns.get_loc('serving_size'):df.columns.get_loc('energy_100g')])
 col4
 
 
-# In[ ]:
+# In[158]:
 
 
 df[col4].isna().mean()
 
 
-# In[ ]:
+# In[159]:
 
 
 #cellule utilisée pour explorer les différentes valeurs des colonnes
-df['no_nutriments'].value_counts()[:15]
+df['additives_fr'].value_counts()[:15]
 
 
 # Nous n'allons conserver que les colonnes suivantes :
@@ -1778,7 +1794,7 @@ df['no_nutriments'].value_counts()[:15]
 # 
 # Les autres colonnes sont soit vides, soit nous donnent une informations que nous n'allons pas exploiter, ou bien sont moins compréhensible ou synthétique.
 
-# In[ ]:
+# In[160]:
 
 
 col_part4_to_drop = col4
@@ -1791,14 +1807,14 @@ col_part4_to_drop.remove('image_small_url')
 df.drop(columns=col_part4_to_drop, inplace=True)
 
 
-# In[ ]:
+# In[161]:
 
 
 col4 = list(df.columns[df.columns.get_loc('additives_n'):df.columns.get_loc('energy_100g')])
 df[col4].head()
 
 
-# In[ ]:
+# In[162]:
 
 
 df[col4].isna().mean()
@@ -1808,7 +1824,7 @@ df[col4].isna().mean()
 # 
 # Nous importons un jeu de données informatif de la dangerosité des additifs alimentaires : ici ne sont présents que les additifs avec un niveau de dangerosité pour la santé suffisant pour que la question du bien fondé de la consommation régulière du produit se pose. Tous les additifs absents de cette liste auront un niveau de dangerosité égal à 0, tandis que les additifs de ce jeu de donnée auront un niveau de dangerosité allant de 1 à 3.
 
-# In[ ]:
+# In[163]:
 
 
 df_additifs = pd.read_csv("extradatas\\additifs_dangereux.csv", delimiter=';', on_bad_lines='skip')
@@ -1817,71 +1833,63 @@ df_additifs
 
 # A ce stade nous voulons récupérer la liste des codes des additifs contenus dans chaque produit pour facilement faire la correspondance avec notre jeu de données sur la dangerosité des additifs.
 
-# In[ ]:
+# In[164]:
 
 
-df['additives_fr'].value_counts()[:10]
+df['additives_fr'].value_counts()[10:]
 
 
-# In[ ]:
+# In[165]:
 
 
-selector = lambda x: [str(element).split(' -')[0] for element in x]
-df.insert(loc=(df.columns.get_loc('additives_fr')+1), column='codes_additifs', value=df['additives_fr'].fillna('inconnus').str.split(',').apply(selector))
+selector = lambda x: [str(element).split(' -')[0] for element in str(x).split(',')] if type(x) != float else np.nan if np.isnan(x) else x
+df.insert(loc=(df.columns.get_loc('additives_fr')+1), column='codes_additifs', value=df['additives_fr'].apply(selector))
 
 
-# In[ ]:
+# In[166]:
 
 
 df['codes_additifs']
 
 
-# In[ ]:
+# In[167]:
 
 
 def highest_danger_level(value):
     i=0
     liste_code_danger_add = df_additifs['Id_additif'].tolist()
     list_level_danger_add = df_additifs['Niveau_danger'].tolist()
-    for code_add in value:
-        danger=0
-        contains = liste_code_danger_add.__contains__(code_add)
-        if contains:
-            if list_level_danger_add[i] > danger :
-                danger = list_level_danger_add[i]
-        i+=1
+    if type(value) == float:
+        if np.isnan(value):
+            danger = np.nan
+    else:
+        for code_add in value:
+            danger=0
+            contains = liste_code_danger_add.__contains__(code_add)
+            if contains:
+                if list_level_danger_add[i] > danger :
+                    danger = list_level_danger_add[i]
+            i+=1
     return danger
 
 
-# In[ ]:
-
-
-highest_danger_level(df['codes_additifs'][190582])
-
-
-# In[ ]:
+# In[168]:
 
 
 df.insert(loc=(df.columns.get_loc('codes_additifs')+1), column='additif_niveau_danger', value=df['codes_additifs'].apply(highest_danger_level))
 
 
-# In[ ]:
-
-
-df['additif_niveau_danger'].value_counts()
-
-
-# Nous sommes rassurés par la présence d'additifs de dangerosité de plus bas niveau uniquement.
+# Nous sommes rassurés par la présence d'additifs de dangerosité du plus bas niveau uniquement.
 # 
 # Nous n'avons désormais plus besoin de notre dataframe <b>df_additifs</b>.
 
-# In[ ]:
+# In[169]:
 
 
 del df_additifs
 
 
-# In[ ]:
+# In[170]:
 
 
 df_4 = df.copy()
@@ -1889,62 +1897,112 @@ df_4 = df.copy()
 
 # #### 5. Partie informations nutritionnelles
 
-# In[ ]:
+# In[171]:
 
 
 df = df_4.copy()
 
 
-# In[ ]:
+# In[172]:
 
 
 col5 = list(df.columns[df.columns.get_loc('energy_100g'):])
 col5
 
 
-# In[ ]:
+# In[173]:
 
 
 len(col5)
 
 
-# In[ ]:
+# In[174]:
 
 
 msno.bar(df[col5], sort='descending')
 
 
-# In[ ]:
-
-
-df[col5].columns[df[col5].notna().sum()>df.shape[0]/100]
-
-
-# In[ ]:
-
-
-df[col5].columns[df[col5].value_counts()[:10]>1]
-
-
-# In[ ]:
-
-
-df[col5].value_counts()
-
-
 # Tout d'abord nous allons créer une colonne indiquant si un produit contient de l'alcool:
 
-# In[ ]:
+# In[175]:
 
 
 df.insert(loc=(df.columns.get_loc('energy_100g')-1), column='alcool', value=df['alcohol_100g'].apply(lambda x: 1 if x>0.0 else 0))
 
 
-# In[ ]:
+# In[176]:
 
 
 df['alcool'].value_counts()
 
+
+# Pour la suite de notre étude, nous n'allons garder que les colonnes présentant un <b>taux de remplissage supérieur à 45%</b> et disposant d'un <b>nombre de valeurs uniques supérieur à 50</b>, afin de pouvoir réaliser une analyse statistique valable.
+
+# In[177]:
+
+
+col5 = np.intersect1d(df[col5].columns[df[col5].nunique()>50],df[col5].columns[df[col5].notna().sum()>45*df.shape[0]/100]).tolist()
+
+
+# In[178]:
+
+
+df[col5]
+
+
+# In[179]:
+
+
+df.drop(columns=np.setdiff1d(df.columns[df.columns.get_loc('energy_100g'):],col5), inplace=True)
+
+
+# In[180]:
+
+
+df.drop('nutrition-score-uk_100g', axis=1, inplace=True)
+col5.remove('nutrition-score-uk_100g')
+
+
+# In[181]:
+
+
+col5
+
+
+# In[182]:
+
+
+col6 = col5.copy()
+col6.remove('nutrition-score-fr_100g')
+col6.remove('energy_100g')
+
+
+# In[183]:
+
+
+for col in col6:
+    df[col].clip(0,100, inplace=True)
+
+
+# In[184]:
+
+
+df[col5].describe()
+
+
+# In[185]:
+
+
+df.shape
+
+
+# In[186]:
+
+
+df.isna().mean().mean()
+
+
+# ## Traitement des valeurs manquantes
 
 # In[ ]:
 
