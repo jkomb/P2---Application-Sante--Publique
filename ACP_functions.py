@@ -203,8 +203,8 @@ def display_factorial_planes(   X_projected,
 
 
 def display_corr_circle(pca, 
-                      x_y, 
-                      features) : 
+                        x_y, 
+                        features) : 
     """
     Affiche le graphe des correlations
 
@@ -223,14 +223,23 @@ def display_corr_circle(pca,
 
     # Pour chaque composante :
     for i in range(0, pca.components_.shape[1]):
-
+        
+        if (np.abs(pca.components_[x, i])<0.5 and not np.abs(pca.components_[y, i])<0.5):
+            color = '#FFC300'
+	elif (np.abs(pca.components_[y, i])<0.5 and not np.abs(pca.components_[x, i])<0.5):
+            color = '#FFC300'
+        elif (np.abs(pca.components_[x, i])<0.5 and np.abs(pca.components_[y, i])<0.5):
+            color = '#FF0000'
+        else:
+            color = None
         # Les flèches
         ax.arrow(0,0, 
                 pca.components_[x, i],  
                 pca.components_[y, i],  
                 head_width=0.07,
                 head_length=0.07, 
-                width=0.02, )
+                width=0.02,
+                color=color)
 
         # Les labels
         plt.text(pca.components_[x, i] + np.sign(pca.components_[x, i])*0.06,
@@ -246,12 +255,12 @@ def display_corr_circle(pca,
     plt.ylabel("F{} ({}%)".format(y+1, round(100*pca.explained_variance_ratio_[y],1)))
 
     plt.title("Cercle des corrélations du plan (F{} , F{}) : {}% de l'inertie totale".format(x+1, y+1, 
-									round(100*(pca.explained_variance_ratio_[x]+
-										pca.explained_variance_ratio_[y]),1)))
+                                                                                round(100*(pca.explained_variance_ratio_[x]+
+                                                                                    pca.explained_variance_ratio_[y]),1)))
 
     # Le cercle 
     an = np.linspace(0, 2 * np.pi, 100)
-    plt.plot(np.cos(an), np.sin(an))  # Add a unit circle for scale
+    plt.plot(np.cos(an), np.sin(an))
 
     # Axes et display
     plt.axis('equal')
