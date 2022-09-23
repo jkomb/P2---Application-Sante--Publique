@@ -203,8 +203,9 @@ def display_factorial_planes(   X_projected,
 
 
 def display_corr_circle(pca, 
-                      x_y, 
-                      features) : 
+                        x_y, 
+                        features, 
+                        seuil=0.5) : 
     """
     Affiche le graphe des correlations
 
@@ -213,6 +214,7 @@ def display_corr_circle(pca,
     pca : sklearn.decomposition.PCA : notre objet PCA qui a été fit
     x_y : list ou tuple : le couple x,y des plans à afficher, exemple [0,1] pour F1, F2
     features : list ou tuple : la liste des features (ie des dimensions) à représenter
+    seuil: seuil de qualité de projection des variables, colore les flèches des variables en vert ou rouge si ce seuil est dépassé ou non
     """
 
     # Extrait x et y 
@@ -223,14 +225,21 @@ def display_corr_circle(pca,
 
     # Pour chaque composante :
     for i in range(0, pca.components_.shape[1]):
-
+        
+        if (np.abs(pca.components_[x, i])<seuil and not np.abs(pca.components_[y, i])<seuil) or (np.abs(pca.components_[y, i])<seuil and not np.abs(pca.components_[x, i])<seuil):
+            color = '#2CE042'
+        elif (np.abs(pca.components_[x, i])<seuil and np.abs(pca.components_[y, i])<seuil):
+            color = '#FF0000'
+        else:
+            color = None
         # Les flèches
         ax.arrow(0,0, 
                 pca.components_[x, i],  
                 pca.components_[y, i],  
                 head_width=0.07,
                 head_length=0.07, 
-                width=0.02, )
+                width=0.02,
+                color=color)
 
         # Les labels
         plt.text(pca.components_[x, i] + np.sign(pca.components_[x, i])*0.06,
@@ -246,12 +255,12 @@ def display_corr_circle(pca,
     plt.ylabel("F{} ({}%)".format(y+1, round(100*pca.explained_variance_ratio_[y],1)))
 
     plt.title("Cercle des corrélations du plan (F{} , F{}) : {}% de l'inertie totale".format(x+1, y+1, 
-									round(100*(pca.explained_variance_ratio_[x]+
-										pca.explained_variance_ratio_[y]),1)))
+                                                                                round(100*(pca.explained_variance_ratio_[x]+
+                                                                                    pca.explained_variance_ratio_[y]),1)))
 
     # Le cercle 
     an = np.linspace(0, 2 * np.pi, 100)
-    plt.plot(np.cos(an), np.sin(an))  # Add a unit circle for scale
+    plt.plot(np.cos(an), np.sin(an))
 
     # Axes et display
     plt.axis('equal')
