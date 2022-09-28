@@ -52,12 +52,10 @@ def display_factorial_planes(   X_projected,
                                 marker="."):
     """
     Affiche la projection des individus
-
     Positional arguments : 
     -------------------------------------
     X_projected : np.array, pd.DataFrame, list of list : la matrice des points projetés
     x_y : list ou tuple : le couple x,y des plans à afficher, exemple [0,1] pour F1, F2
-
     Optional arguments : 
     -------------------------------------
     pca : sklearn.decomposition.PCA : un objet PCA qui a été fit, cela nous permettra d'afficher la variance de chaque composante, default = None
@@ -204,17 +202,14 @@ def display_factorial_planes(   X_projected,
 
 def display_corr_circle(pca, 
                         x_y, 
-                        features, 
-                        seuil=0.5) : 
+                        features) : 
     """
     Affiche le graphe des correlations
-
     Positional arguments : 
     -----------------------------------
     pca : sklearn.decomposition.PCA : notre objet PCA qui a été fit
     x_y : list ou tuple : le couple x,y des plans à afficher, exemple [0,1] pour F1, F2
     features : list ou tuple : la liste des features (ie des dimensions) à représenter
-    seuil: seuil de qualité de projection des variables, colore les flèches des variables en vert ou rouge si ce seuil est dépassé ou non
     """
 
     # Extrait x et y 
@@ -226,9 +221,11 @@ def display_corr_circle(pca,
     # Pour chaque composante :
     for i in range(0, pca.components_.shape[1]):
         
-        if (np.abs(pca.components_[x, i])<seuil and not np.abs(pca.components_[y, i])<seuil) or (np.abs(pca.components_[y, i])<seuil and not np.abs(pca.components_[x, i])<seuil):
-            color = '#2CE042'
-        elif (np.abs(pca.components_[x, i])<seuil and np.abs(pca.components_[y, i])<seuil):
+        if (np.abs(pca.components_[x, i])<0.5 and not np.abs(pca.components_[y, i])<0.5):
+            color = '#FFC300'
+	elif (np.abs(pca.components_[y, i])<0.5 and not np.abs(pca.components_[x, i])<0.5):
+            color = '#FFC300'
+        elif (np.abs(pca.components_[x, i])<0.5 and np.abs(pca.components_[y, i])<0.5):
             color = '#FF0000'
         else:
             color = None
